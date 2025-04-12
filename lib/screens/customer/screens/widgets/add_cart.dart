@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:pops/utilis/constant.dart';
 import '../order/order_conform.dart';
-
-import '../../../../common/styles/color.dart'; // Ensure that foodBg is defined here
+import '../../../../common/styles/color.dart';
 
 class CartScreen extends StatefulWidget {
-  // Each cart item is expected to have a 'product' (Map) and a 'quantity' (int)
   final List<Map<String, dynamic>> cartItems;
 
   const CartScreen({Key? key, required this.cartItems}) : super(key: key);
@@ -15,13 +13,11 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  // List of controllers for each cart item
   List<TextEditingController> _controllers = [];
 
   @override
   void initState() {
     super.initState();
-    // Initialize controllers for each cart item
     _controllers = widget.cartItems
         .map((item) => TextEditingController(text: item['quantity'].toString()))
         .toList();
@@ -29,14 +25,12 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   void dispose() {
-    // Dispose of all controllers
     for (var controller in _controllers) {
       controller.dispose();
     }
     super.dispose();
   }
 
-  // Calculate the total price for all items in the cart.
   double get totalPrice {
     double total = 0;
     for (var item in widget.cartItems) {
@@ -48,7 +42,14 @@ class _CartScreenState extends State<CartScreen> {
     return total;
   }
 
-  // Increase the quantity of a specific cart item.
+  double getItemTotal(int index) {
+    final item = widget.cartItems[index];
+    final double price =
+        double.tryParse(item['product']['sell_price'].toString()) ?? 0;
+    final int quantity = item['quantity'];
+    return price * quantity;
+  }
+
   void increaseQuantity(int index) {
     setState(() {
       widget.cartItems[index]['quantity']++;
@@ -56,8 +57,6 @@ class _CartScreenState extends State<CartScreen> {
     });
   }
 
-  // Decrease the quantity of a specific cart item.
-  // If quantity becomes less than 1, remove the item.
   void decreaseQuantity(int index) {
     setState(() {
       if (widget.cartItems[index]['quantity'] > 1) {
@@ -65,60 +64,98 @@ class _CartScreenState extends State<CartScreen> {
         _controllers[index].text =
             widget.cartItems[index]['quantity'].toString();
       } else {
-        widget.cartItems.removeAt(index);
-        _controllers.removeAt(index);
+        removeItem(index);
       }
     });
   }
 
-  // Remove the cart item completely.
+  // Updated removeItem with undo support
   void removeItem(int index) {
+    // Keep track of the removed item and its controller
+    final removedItem = widget.cartItems[index];
+    final removedController = _controllers[index];
+
     setState(() {
       widget.cartItems.removeAt(index);
+      _controllers.removeAt(index);
       cartCountNotifier.value = widget.cartItems.length;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Item Removed from the cart'),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          elevation: 10,
-          action: SnackBarAction(
-            label: 'Close',
-            textColor: Colors.white,
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            },
-          ),
-        ),
-      );
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Item Removed from the cart'),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+        elevation: 10,
+        action: SnackBarAction(
+          label: 'Undo',
+          textColor: Colors.white,
+          onPressed: () {
+            setState(() {
+              widget.cartItems.insert(index, removedItem);
+              _controllers.insert(index, removedController);
+              cartCountNotifier.value = widget.cartItems.length;
+            });
+          },
+        ),
+      ),
+    );
   }
 
-  // Method to increase the total count
-  void increaseTotalCount() {
-    setState(() {
-      for (var item in widget.cartItems) {
-        item['quantity']++;
-      }
-    });
+  // Shows a dialog with hint message when the info icon is tapped.
+  void _showHintDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('How to Remove an Item'),
+          content: const Text(
+              'Swipe left or right on an item to remove it from your cart.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Got it'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-      },
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: Colors.grey[200], // Set a custom background color
+        backgroundColor: Colors.grey[200],
         appBar: AppBar(
-          title: const Text('Your Cart'),
+          backgroundColor: const Color(0xFF1E45A8),
+          title: const Text('My Cart', style: TextStyle(color: Colors.white)),
+          leading: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.info_outline, color: Colors.white),
+              onPressed: _showHintDialog,
+            ),
+          ],
         ),
         body: widget.cartItems.isEmpty
-            ? const Center(child: Text('Your cart is empty!'))
+            ? const Center(
+                child: Text(
+                  'Your cart is empty!',
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              )
             : Column(
                 children: [
-                  // List of Cart Items.
                   Expanded(
                     child: ListView.builder(
                       itemCount: widget.cartItems.length,
@@ -128,129 +165,236 @@ class _CartScreenState extends State<CartScreen> {
                         final double price =
                             double.tryParse(product['sell_price'].toString()) ??
                                 0;
+                        final int quantity = item['quantity'];
 
-                        return Card(
-                          margin: const EdgeInsets.all(8.0),
-                          child: ListTile(
-                            leading: Image.network(
-                              product['img_url'] ?? '',
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  foodBg,
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                );
-                              },
+                        return Dismissible(
+                          key: Key(product['id'].toString() + index.toString()),
+                          direction: DismissDirection.horizontal,
+                          background: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent,
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            title: Text(product['name'] ?? ''),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                    'Price: ₹${double.tryParse(product['sell_price'].toString())?.toStringAsFixed(2) ?? '0.00'}'),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    // Decrease quantity button.
-                                    IconButton(
-                                      icon: const Icon(
-                                          Icons.remove_circle_outline),
-                                      onPressed: () => decreaseQuantity(index),
-                                    ),
-                                    // Typeable quantity field.
-                                    SizedBox(
-                                      width: 50,
-                                      child: TextField(
-                                        keyboardType: TextInputType.number,
-                                        textAlign: TextAlign.center,
-                                        controller: _controllers[index],
-                                        onChanged: (value) {
-                                          int? newQuantity =
-                                              int.tryParse(value);
-                                          if (newQuantity != null &&
-                                              newQuantity > 0) {
-                                            setState(() {
-                                              widget.cartItems[index]
-                                                  ['quantity'] = newQuantity;
-                                            });
-                                          }
-                                        },
-                                        onSubmitted: (value) {
-                                          int? newQuantity =
-                                              int.tryParse(value);
-                                          if (newQuantity != null &&
-                                              newQuantity > 0) {
-                                            setState(() {
-                                              widget.cartItems[index]
-                                                  ['quantity'] = newQuantity;
-                                            });
-                                          } else {
-                                            // Reset to previous valid quantity
-                                            _controllers[index].text = widget
-                                                .cartItems[index]['quantity']
-                                                .toString();
-                                          }
-                                        },
-                                        decoration: const InputDecoration(
-                                          border: OutlineInputBorder(),
-                                          contentPadding: EdgeInsets.symmetric(
-                                              vertical: 4, horizontal: 8),
-                                        ),
-                                      ),
-                                    ),
-                                    // Increase quantity button.
-                                    IconButton(
-                                      icon:
-                                          const Icon(Icons.add_circle_outline),
-                                      onPressed: () => increaseQuantity(index),
-                                    ),
-                                  ],
+                            alignment: Alignment.centerLeft,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: const Icon(Icons.delete_outline,
+                                color: Colors.white),
+                          ),
+                          secondaryBackground: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: const Icon(Icons.delete_outline,
+                                color: Colors.white),
+                          ),
+                          onDismissed: (direction) {
+                            removeItem(index);
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.shade300,
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
-                            // Remove item button.
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () => removeItem(index),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.all(8),
+                              title: Row(
+                                children: [
+                                  // Product Image
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      product['img_url'] ?? '',
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Image.asset(
+                                          foodBg,
+                                          width: 60,
+                                          height: 60,
+                                          fit: BoxFit.cover,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  // Name, Price, and Quantity controls in one line
+                                  Expanded(
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        // Product Name and Price
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              product['name'] ?? '',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '₹${price.toStringAsFixed(2)}',
+                                              style: TextStyle(
+                                                color:
+                                                    Colors.deepPurple.shade400,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        // Quantity controls
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(
+                                                  Icons.remove_circle_outline,
+                                                  color: Colors.deepPurple),
+                                              onPressed: () =>
+                                                  decreaseQuantity(index),
+                                            ),
+                                            SizedBox(
+                                              width: 40,
+                                              child: TextField(
+                                                keyboardType:
+                                                    TextInputType.number,
+                                                textAlign: TextAlign.center,
+                                                controller: _controllers[index],
+                                                onChanged: (value) {
+                                                  int? newQuantity =
+                                                      int.tryParse(value);
+                                                  if (newQuantity != null &&
+                                                      newQuantity > 0) {
+                                                    setState(() {
+                                                      widget.cartItems[index]
+                                                              ['quantity'] =
+                                                          newQuantity;
+                                                    });
+                                                  }
+                                                },
+                                                decoration:
+                                                    const InputDecoration(
+                                                  border: OutlineInputBorder(),
+                                                  contentPadding:
+                                                      EdgeInsets.symmetric(
+                                                          vertical: 4),
+                                                ),
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(
+                                                  Icons.add_circle_outline,
+                                                  color: Colors.deepPurple),
+                                              onPressed: () =>
+                                                  increaseQuantity(index),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Total for the item
+                                  Text(
+                                    '₹${getItemTotal(index).toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      color: Colors.deepPurple.shade400,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         );
                       },
                     ),
                   ),
-                  // Bottom Bar with Total Price and Checkout Button.
-                  Container(
+                  // Bottom section for Total and full width Checkout button
+                  Padding(
                     padding: const EdgeInsets.all(16.0),
-                    color: Colors.grey[300],
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Total price display.
-                        Text(
-                          'Total: ₹${totalPrice.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        // Checkout button.
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => OrderConfirmationPage(
-                                  orderItems: widget.cartItems,
-                                  totalAmount: totalPrice,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E45A8),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 20, horizontal: 16),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Total',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 20,
                                 ),
                               ),
-                            );
-                          },
-                          child: const Text('Checkout'),
-                        ),
-                      ],
+                              Text(
+                                '₹${totalPrice.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => OrderConfirmationPage(
+                                      orderItems: widget.cartItems,
+                                      totalAmount: totalPrice,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                'Checkout',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Color(0xFF1E45A8),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 // New Color Palette - Modern & Cohesive
 const Color primaryColor =
-    Color(0xFF5C6BC0); // Indigo - for headers and main UI elements
+    Color(0xFF1E45A8); // Indigo - for headers and main UI elements
 const Color secondaryColor =
     Color(0xFFFFA726); // Amber - for accents and highlights
 const Color accentColor =
@@ -19,7 +19,7 @@ const Color textSecondary = Color(0xFF607D8B); // Blue Gray - for secondary text
 const Color errorColor = Color(0xFFEF5350); // Red - for errors and warnings
 
 // Product Card Colors
-const Color productNameBg = Color(0xFF5C6BC0); // Indigo - matches primary color
+const Color productNameBg = Color(0xFF1E45A8); // Indigo - matches primary color
 const Color productPriceBg =
     Color(0xFFFFA726); // Amber - matches secondary color
 
