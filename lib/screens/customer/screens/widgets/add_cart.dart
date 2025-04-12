@@ -165,7 +165,7 @@ class _CartScreenState extends State<CartScreen> {
                         final double price =
                             double.tryParse(product['sell_price'].toString()) ??
                                 0;
-                        // final int quantity = item['quantity'];
+                        final int quantity = item['quantity'];
 
                         return Dismissible(
                           key: Key(product['id'].toString() + index.toString()),

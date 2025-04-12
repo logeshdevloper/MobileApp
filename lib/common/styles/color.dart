@@ -28,3 +28,4 @@ const Color lightBlue = Color(0xFFE6EFFF);
 const Color darkBlue = Color(0xFF1E45A8);
 const Color bgBlue = Color(0xFFF5F9FF);
 const Color bgcard = Color.fromARGB(255, 198, 181, 246);
+const Color bgcart = Color.fromARGB(255, 246, 243, 252);
