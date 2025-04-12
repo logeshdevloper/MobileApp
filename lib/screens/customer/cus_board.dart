@@ -259,13 +259,74 @@ class _CustomerScreenState extends State<CustomerScreen> {
       ),
       body: Container(
         color: bgSecondary,
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: const [
-            HomePage(),
-            CategoriesPage(),
-            OrdersPage(),
-            ProfilePage(),
+        child: Stack(
+          children: [
+            IndexedStack(
+              index: _selectedIndex,
+              children: const [
+                HomePage(),
+                CategoriesPage(),
+                OrdersPage(),
+                ProfilePage(),
+              ],
+            ),
+            // Floating cart bar
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 16,
+              child: ValueListenableBuilder<int>(
+                valueListenable: cartCountNotifier,
+                builder: (context, count, child) {
+                  if (count == 0) return const SizedBox.shrink();
+
+                  return GestureDetector(
+                    onTap: _addCartScreen,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: darkBlue,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, -5),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '$count ${count == 1 ? 'item added' : 'items added'}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                            padding: const EdgeInsets.all(3),
+                            child: const Icon(
+                              Icons.arrow_forward,
+                              color: darkBlue,
+                              size: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
