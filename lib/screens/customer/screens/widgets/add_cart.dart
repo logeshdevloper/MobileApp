@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pops/utilis/constant.dart';
 import '../order/order_conform.dart';
 import '../../../../common/styles/color.dart';
+import '../home.dart';
 
 class CartScreen extends StatefulWidget {
   final List<Map<String, dynamic>> cartItems;
@@ -148,10 +149,86 @@ class _CartScreenState extends State<CartScreen> {
           ],
         ),
         body: widget.cartItems.isEmpty
-            ? const Center(
-                child: Text(
-                  'Your cart is empty!',
-                  style: TextStyle(color: Colors.white, fontSize: 18),
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 2,
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.shopping_cart_outlined,
+                        size: 80,
+                        color: primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Your cart is feeling lonely!',
+                      style: TextStyle(
+                        color: textSecondary,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Add some delicious items to make it happy',
+                      style: TextStyle(
+                        color: textSecondary.withOpacity(0.7),
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 5,
+                      ),
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const HomePage(),
+                          ),
+                        );
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.shopping_bag_outlined,
+                              color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            'Start Shopping',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               )
             : Column(
