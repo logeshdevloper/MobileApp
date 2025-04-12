@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
-import 'login.dart';
+import 'login_screen.dart';
 
 Future<void> logout(BuildContext context) async {
   final prefs = await SharedPreferences.getInstance();

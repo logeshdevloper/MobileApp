@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pops/utilis/constant.dart';
 
 class CustomCard extends StatelessWidget {
   final String image;
@@ -8,8 +7,9 @@ class CustomCard extends StatelessWidget {
   final String itemsCount;
   final String price;
   final String sellPrice;
+  final String deliveryTime;
 
-  const CustomCard({
+  CustomCard({
     Key? key,
     required this.image,
     required this.title,
@@ -17,21 +17,36 @@ class CustomCard extends StatelessWidget {
     required this.itemsCount,
     required this.price,
     required this.sellPrice,
-  }) : super(key: key);
+    this.deliveryTime = 'N/A',
+  }) : super(key: key) {
+    // Debug print when widget is constructed
+    // print('CustomCard constructed with:');
+    // print('  title: $title');
+    // print('  category: $category');
+    // print('  price: $price');
+    // print('  sellPrice: $sellPrice');
+    // print('  image: $image');
+    // print('  itemsCount: $itemsCount');
+    // print('  deliveryTime: $deliveryTime');
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Debug print for build
+    // print('CustomCard build method called for product: $title');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Container(
         width: 220,
         height: 320,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? Colors.grey[900] : Colors.white,
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
+              color: (isDark ? Colors.black : Colors.grey).withOpacity(0.2),
               spreadRadius: 2,
               blurRadius: 8,
               offset: const Offset(0, 4),
@@ -54,11 +69,17 @@ class CustomCard extends StatelessWidget {
                     height: 160,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
-                      return Image.asset(
-                        foodBg,
+                      // Debug print
+                      // print('Error loading image: $error');
+                      return Container(
                         width: double.infinity,
                         height: 160,
-                        fit: BoxFit.cover,
+                        color: isDark ? Colors.grey[800] : Colors.grey[200],
+                        child: Icon(
+                          Icons.image_not_supported_outlined,
+                          size: 48,
+                          color: isDark ? Colors.grey[600] : Colors.grey[400],
+                        ),
                       );
                     },
                   ),
@@ -95,10 +116,11 @@ class CustomCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.2,
+                            color: isDark ? Colors.white : Colors.black87,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -108,16 +130,32 @@ class CustomCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.grey[100],
+                          color: isDark ? Colors.grey[800] : Colors.grey[100],
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           category,
                           style: TextStyle(
-                            color: Colors.grey[700],
+                            color: isDark ? Colors.grey[300] : Colors.grey[700],
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time,
+                          size: 16,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        deliveryTime,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
                         ),
                       ),
                     ],
@@ -130,7 +168,7 @@ class CustomCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           decoration: TextDecoration.lineThrough,
-                          color: Colors.red[300],
+                          color: isDark ? Colors.red[200] : Colors.red[300],
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -139,7 +177,7 @@ class CustomCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green[600],
+                          color: isDark ? Colors.green[400] : Colors.green[600],
                         ),
                       ),
                     ],

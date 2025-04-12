@@ -133,6 +133,15 @@ class AnimatedSnackCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  Text(
+                    'Delivery Time: ${product['delivery_time']} min',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(

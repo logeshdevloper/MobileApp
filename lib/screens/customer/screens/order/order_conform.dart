@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:pops/utilis/constant.dart';
+import '../home.dart';
 import '../order/order_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -79,6 +80,9 @@ class _OrderConfirmationPageState extends State<OrderConfirmationPage> {
               .toList(),
           'total_amount': widget.totalAmount,
           'delivery_address': address,
+          'delivery_time': widget.orderItems.isNotEmpty
+              ? widget.orderItems[0]['product']['delivery_time']
+              : null, // Ensure it doesn't crash if empty
           'payment_method': 'COD',
           'status': 'pending'
         }),
@@ -88,6 +92,10 @@ class _OrderConfirmationPageState extends State<OrderConfirmationPage> {
         final responseData = jsonDecode(response.body);
         final orderNumber = responseData['order_number'];
 
+        // Clear the cart after successful order
+        cartItems.clear();
+        cartCountNotifier.value = 0;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Order placed successfully! Order #$orderNumber'),
@@ -95,12 +103,13 @@ class _OrderConfirmationPageState extends State<OrderConfirmationPage> {
           ),
         );
 
-        // Navigate to orders page
-        Navigator.push(
+        // Navigate to HomePage and clear the navigation stack
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => OrdersPage(),
+            builder: (context) => HomePage(),
           ),
+          (route) => false, // This will clear all previous routes
         );
       } else {
         // Check if the response is JSON
@@ -113,7 +122,7 @@ class _OrderConfirmationPageState extends State<OrderConfirmationPage> {
         }
       }
     } catch (e) {
-      print(e);
+      print(widget.orderItems);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error placing order: ${e.toString()}'),

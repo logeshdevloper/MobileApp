@@ -1,5 +1,6 @@
 import 'dart:convert'; // Add this to handle JSON decoding
 import 'package:flutter/material.dart';
+import '../../../../common/styles/color.dart';
 import '../../../../utilis/constant.dart';
 import '../product_manage/edit_product.dart';
 import 'product_cards.dart';
@@ -59,7 +60,25 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
       final res = await http.delete(Uri.parse('$rOOT/delete_product/$index'));
 
       if (res.statusCode == 200) {
-        getproducts();
+        final data = jsonDecode(res.body);
+        if (data.containsKey('error')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['error']),
+              backgroundColor: Colors.red.shade400,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['msg']),
+              backgroundColor: primaryColor,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          getproducts();
+        }
       }
     } catch (e) {
       print(e);

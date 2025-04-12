@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'common/auth/welcome_screen.dart';
 import 'services/auth_services.dart';
 
 void main() {
@@ -8,77 +9,53 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
-
-
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Widget>(
-      future: getInitialScreen(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          // Loading indicator with branding
-          return MaterialApp(
-            home: Scaffold(
+    return MaterialApp(
+      title: "Pops",
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: BorderSide(color: Colors.grey.shade400, width: 1.0),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: BorderSide(color: Colors.grey.shade400, width: 1.0),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: BorderSide(color: Colors.blue.shade300, width: 2.0),
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade100,
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        ),
+      ),
+      home: FutureBuilder<Widget>(
+        future: getInitialScreen(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
               body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Loading...', style: TextStyle(fontSize: 18)),
-                  ],
-                ),
+                child: CircularProgressIndicator(),
               ),
-            ),
-            debugShowCheckedModeBanner: false,
-          );
-        } else if (snapshot.hasError) {
-          // Error screen
-          return MaterialApp(
-            home: Scaffold(
+            );
+          }
+          if (snapshot.hasError) {
+            return Scaffold(
               body: Center(
-                child: Text(
-                  'An error occurred while loading the app!',
-                  style: const TextStyle(fontSize: 18, color: Colors.red),
-                ),
+                child: Text('Error: ${snapshot.error}'),
               ),
-            ),
-            debugShowCheckedModeBanner: false,
-          );
-        } else {
-          // Navigate to the determined screen
-          return MaterialApp(
-            home: snapshot.data,
-            title: "Pops",
-            theme: ThemeData(
-              primarySwatch: Colors.orange,
-              visualDensity: VisualDensity.adaptivePlatformDensity,
-              inputDecorationTheme: InputDecorationTheme(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide:
-                      BorderSide(color: Colors.grey.shade400, width: 1.0),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide:
-                      BorderSide(color: Colors.grey.shade400, width: 1.0),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide:
-                      BorderSide(color: Colors.blue.shade300, width: 2.0),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              ),
-            ),
-            debugShowCheckedModeBanner: false,
-          );
-        }
-      },
+            );
+          }
+          return snapshot.data ?? const WelcomeScreen();
+        },
+      ),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

@@ -18,6 +18,8 @@ class _AddproductState extends State<Addproduct> {
   final _originalPriceKey = GlobalKey<FormFieldState>();
   final _categoryFormKey = GlobalKey<FormState>();
   final _categoryController = TextEditingController();
+  final _deliveryTimeController = TextEditingController();
+  final _scrollController = ScrollController();
 
   String? _name,
       _price,
@@ -25,56 +27,104 @@ class _AddproductState extends State<Addproduct> {
       _category,
       _description,
       _stock,
-      _image,
-      _deliveryTime;
+      _image;
+  int? _deliveryTimeInMinutes;
+  String? _categoryId;
   bool isLoading = false;
-  List<String> categories = [];
+  bool isRefreshing = false;
+  List<Map<String, dynamic>> categories = [];
+  List<Map<String, dynamic>> products = [];
 
-  final List<String> deliveryTimes = [
-    '1-2 days',
-    '2-3 days',
-    '3-4 days',
-    '4-5 days',
-    '5-7 days',
-    '7-10 days',
-    '10-15 days',
-    '15-20 days',
-    '20-30 days',
-    '30+ days'
+  final List<Map<String, dynamic>> deliveryTimes = [
+    {'label': '30 minutes', 'minutes': 30},
+    {'label': '1 hour', 'minutes': 60},
+    {'label': '2 hours', 'minutes': 120},
+    {'label': '3 hours', 'minutes': 180},
+    {'label': '4 hours', 'minutes': 240},
+    {'label': '6 hours', 'minutes': 360},
+    {'label': '8 hours', 'minutes': 480},
+    {'label': '12 hours', 'minutes': 720},
+    {'label': '24 hours', 'minutes': 1440},
+    {'label': '36 hours', 'minutes': 2160},
+    {'label': '48 hours', 'minutes': 2880},
   ];
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade400,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green.shade400,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     fetchCategories();
+    fetchProducts();
   }
 
   Future<void> fetchCategories() async {
     try {
       final response = await http.get(Uri.parse('${rOOT}get_categories'));
 
-      print(jsonDecode(response.body));
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['categories'] != null) {
           setState(() {
-            categories = List<String>.from(data['categories']
-                .map((category) => category['name'].toString()));
-          });
-        } else {
-          print('Categories data is null');
-          setState(() {
-            categories = [];
+            categories = List<Map<String, dynamic>>.from(data['categories']);
           });
         }
       }
     } catch (e) {
-      print('Error fetching categories: $e');
+      _showErrorSnackBar('Failed to load categories');
+    }
+  }
+
+  Future<void> fetchProducts() async {
+    try {
       setState(() {
-        categories = [];
+        isRefreshing = true;
+      });
+
+      final response = await http.get(Uri.parse('${rOOT}get_product'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['products'] != null) {
+          setState(() {
+            products = List<Map<String, dynamic>>.from(data['products']);
+          });
+        }
+      } else {
+        throw Exception('Failed to load products');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to load products');
+    } finally {
+      setState(() {
+        isRefreshing = false;
       });
     }
+  }
+
+  Future<void> _onRefresh() async {
+    await Future.wait([
+      fetchCategories(),
+      fetchProducts(),
+    ]);
   }
 
   Future<void> addCategory() async {
@@ -90,9 +140,7 @@ class _AddproductState extends State<Addproduct> {
       );
 
       if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Category added successfully')),
-        );
+        _showSuccessSnackBar('Category added successfully');
         _categoryController.clear();
         Navigator.pop(context);
         fetchCategories();
@@ -100,9 +148,7 @@ class _AddproductState extends State<Addproduct> {
         throw Exception('Failed to add category');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      _showErrorSnackBar('Failed to add category');
     }
   }
 
@@ -222,7 +268,7 @@ class _AddproductState extends State<Addproduct> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: _category,
+          value: _categoryId,
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.grey[100],
@@ -233,15 +279,18 @@ class _AddproductState extends State<Addproduct> {
             contentPadding: const EdgeInsets.all(16),
           ),
           hint: const Text('Select category'),
-          items: categories.map((String category) {
+          items: categories.map((category) {
             return DropdownMenuItem<String>(
-              value: category,
-              child: Text(category),
+              value: category['id'].toString(),
+              child: Text(category['name'].toString()),
             );
           }).toList(),
           onChanged: (String? newValue) {
             setState(() {
-              _category = newValue;
+              _categoryId = newValue;
+              _category = categories
+                  .firstWhere((cat) => cat['id'].toString() == newValue)['name']
+                  .toString();
             });
           },
           validator: (value) {
@@ -269,8 +318,8 @@ class _AddproductState extends State<Addproduct> {
           ),
         ),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          value: _deliveryTime,
+        DropdownButtonFormField<int>(
+          value: _deliveryTimeInMinutes,
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.grey[100],
@@ -281,20 +330,27 @@ class _AddproductState extends State<Addproduct> {
             contentPadding: const EdgeInsets.all(16),
           ),
           hint: const Text('Select delivery time'),
-          items: deliveryTimes.map((String time) {
-            return DropdownMenuItem<String>(
-              value: time,
-              child: Text(time),
+          items: deliveryTimes.map((time) {
+            return DropdownMenuItem<int>(
+              value: time['minutes'] as int,
+              child: Text(time['label'] as String),
             );
           }).toList(),
-          onChanged: (String? newValue) {
+          onChanged: (int? newValue) {
+            print(newValue);
             setState(() {
-              _deliveryTime = newValue;
+              _deliveryTimeInMinutes = newValue;
             });
           },
           validator: (value) {
-            if (value == null || value.isEmpty) {
+            if (value == null) {
               return 'Please select delivery time';
+            }
+            if (value < 30) {
+              return 'Minimum delivery time is 30 minutes';
+            }
+            if (value > 2880) {
+              return 'Maximum delivery time is 48 hours';
             }
             return null;
           },
@@ -305,12 +361,27 @@ class _AddproductState extends State<Addproduct> {
   }
 
   Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      _showErrorSnackBar('Please fill all required fields');
+      return;
+    }
 
     setState(() => isLoading = true);
 
     try {
       _formKey.currentState!.save();
+
+      if (_image == null) {
+        _showErrorSnackBar('Please select an image');
+        setState(() => isLoading = false);
+        return;
+      }
+
+      if (_deliveryTimeInMinutes == null) {
+        _showErrorSnackBar('Please select delivery time');
+        setState(() => isLoading = false);
+        return;
+      }
 
       final imageBytes = await File(_image!).readAsBytes();
       final base64Image = base64Encode(imageBytes);
@@ -323,29 +394,29 @@ class _AddproductState extends State<Addproduct> {
           'price': _price,
           'sell_price': _discountPrice,
           'category': _category,
+          'category_id': _categoryId,
           'stock': _stock,
           'description': _description,
           'image': base64Image,
-          'delivery_time': _deliveryTime,
+          'delivery_time': _deliveryTimeInMinutes
         }),
       );
 
       if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Product added successfully")));
-
+        _showSuccessSnackBar('Product added successfully');
         _formKey.currentState!.reset();
         setState(() {
           _image = null;
-          _name = _price = _discountPrice =
-              _category = _stock = _description = _deliveryTime = '';
+          _name =
+              _price = _discountPrice = _category = _stock = _description = '';
+          _categoryId = null;
+          _deliveryTimeInMinutes = null;
         });
       } else {
         throw Exception('Failed to add product');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
+      _showErrorSnackBar('Failed to add product');
     } finally {
       setState(() => isLoading = false);
     }
@@ -357,130 +428,201 @@ class _AddproductState extends State<Addproduct> {
       appBar: AppBar(
         title: const Text("Add Product"),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _onRefresh,
+          ),
+        ],
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : GestureDetector(
+                onTap: () => FocusScope.of(context).unfocus(),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInputField(
-                        label: 'Product Name',
-                        hint: 'Enter product name',
-                        onSaved: (val) => _name = val,
-                      ),
-                      _buildInputField(
-                        key: _originalPriceKey,
-                        label: 'Original Price',
-                        hint: 'Enter original price',
-                        onSaved: (val) => _price = val,
-                        keyboardType: TextInputType.number,
-                        validator: (val) {
-                          if (val == null || val.isEmpty) {
-                            return 'Required field';
-                          }
-                          if (double.tryParse(val) == null) {
-                            return 'Please enter a valid number';
-                          }
-                          return null;
-                        },
-                      ),
-                      _buildInputField(
-                        label: 'Discount Price',
-                        hint: 'Enter discount price',
-                        onSaved: (val) => _discountPrice = val,
-                        keyboardType: TextInputType.number,
-                        validator: (val) {
-                          if (val == null || val.isEmpty)
-                            return 'Required field';
-                          if (double.tryParse(val) == null)
-                            return 'Please enter a valid number';
-
-                          final originalPrice =
-                              _originalPriceKey.currentState?.value as String?;
-
-                          if (originalPrice != null &&
-                              double.tryParse(originalPrice) != null &&
-                              double.parse(val) >=
-                                  double.parse(originalPrice)) {
-                            return 'Discount price must be less than original price';
-                          }
-                          return null;
-                        },
-                      ),
-                      _buildCategoryField(),
-                      _buildDeliveryTimeField(),
-                      _buildInputField(
-                        label: 'Stock',
-                        hint: 'Enter stock quantity',
-                        onSaved: (val) => _stock = val,
-                        keyboardType: TextInputType.number,
-                      ),
-                      _buildInputField(
-                        label: 'Description',
-                        hint: 'Enter product description',
-                        onSaved: (val) => _description = val,
-                        maxLines: 3,
-                      ),
-                      const SizedBox(height: 16),
-                      Center(
+                      Form(
+                        key: _formKey,
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (_image != null)
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.file(
-                                  File(_image!),
-                                  height: 200,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                            _buildInputField(
+                              label: 'Product Name',
+                              hint: 'Enter product name',
+                              onSaved: (val) => _name = val,
+                            ),
+                            _buildInputField(
+                              key: _originalPriceKey,
+                              label: 'Original Price',
+                              hint: 'Enter original price',
+                              onSaved: (val) => _price = val,
+                              keyboardType: TextInputType.number,
+                              validator: (val) {
+                                if (val == null || val.isEmpty) {
+                                  return 'Required field';
+                                }
+                                if (double.tryParse(val) == null) {
+                                  return 'Please enter a valid number';
+                                }
+                                return null;
+                              },
+                            ),
+                            _buildInputField(
+                              label: 'Discount Price',
+                              hint: 'Enter discount price',
+                              onSaved: (val) => _discountPrice = val,
+                              keyboardType: TextInputType.number,
+                              validator: (val) {
+                                if (val == null || val.isEmpty)
+                                  return 'Required field';
+                                if (double.tryParse(val) == null)
+                                  return 'Please enter a valid number';
+
+                                final originalPrice = _originalPriceKey
+                                    .currentState?.value as String?;
+
+                                if (originalPrice != null &&
+                                    double.tryParse(originalPrice) != null &&
+                                    double.parse(val) >=
+                                        double.parse(originalPrice)) {
+                                  return 'Discount price must be less than original price';
+                                }
+                                return null;
+                              },
+                            ),
+                            _buildCategoryField(),
+                            _buildDeliveryTimeField(),
+                            _buildInputField(
+                              label: 'Stock',
+                              hint: 'Enter stock quantity',
+                              onSaved: (val) => _stock = val,
+                              keyboardType: TextInputType.number,
+                            ),
+                            _buildInputField(
+                              label: 'Description',
+                              hint: 'Enter product description',
+                              onSaved: (val) => _description = val,
+                              maxLines: 3,
+                            ),
                             const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: _uploadImage,
-                              icon: const Icon(Icons.upload),
-                              label: Text(_image == null
-                                  ? 'Upload Image'
-                                  : 'Change Image'),
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                            Center(
+                              child: Column(
+                                children: [
+                                  if (_image != null)
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.file(
+                                        File(_image!),
+                                        height: 200,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton.icon(
+                                    onPressed: _uploadImage,
+                                    icon: const Icon(Icons.upload),
+                                    label: Text(_image == null
+                                        ? 'Upload Image'
+                                        : 'Change Image'),
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _submitForm,
+                                style: ElevatedButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Add Product',
+                                  style: TextStyle(fontSize: 16),
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 32),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _submitForm,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text(
-                            'Add Product',
-                            style: TextStyle(fontSize: 16),
+                      if (products.isNotEmpty) ...[
+                        const SizedBox(height: 32),
+                        const Text(
+                          'Recent Products',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 16),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: products.length > 5 ? 5 : products.length,
+                          itemBuilder: (context, index) {
+                            final product = products[index];
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              child: ListTile(
+                                leading: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    product['image_url'] ?? '',
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            Container(
+                                      width: 50,
+                                      height: 50,
+                                      color: Colors.grey[200],
+                                      child: const Icon(Icons.image),
+                                    ),
+                                  ),
+                                ),
+                                title: Text(
+                                  product['name'] ?? 'No name',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  'Price: \$${product['price'] ?? '0.00'}\nStock: ${product['stock'] ?? '0'}',
+                                ),
+                                trailing: Text(
+                                  product['category'] ?? 'No category',
+                                  style: TextStyle(
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }

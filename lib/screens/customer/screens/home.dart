@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as http;
 import 'package:pops/utilis/constant.dart';
-import 'widgets/imageSlider.dart';
-import 'widgets/snackItem_page.dart';
+import '../../../common/styles/color.dart';
+import 'widgets/product_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
+
   @override
-  _HomePageState createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
@@ -21,14 +22,14 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    fetchData();
+    fetchProducts();
   }
 
   final spinkit = SpinKitFadingCircle(
     itemBuilder: (BuildContext context, int index) {
       return DecoratedBox(
         decoration: BoxDecoration(
-          color: index.isEven ? Colors.white : Colors.green,
+          color: index.isEven ? bgPrimary : primaryColor,
           shape: BoxShape.circle,
         ),
       );
@@ -37,27 +38,21 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> fetchProducts() async {
     try {
-      final response = await http.get(Uri.parse('$rOOT/get_product'));
+      final response = await http.get(Uri.parse('${rOOT}get_product'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          products =
-              List<Map<String, dynamic>>.from(data['products'].map((product) {
-            return {
-              'id': product['id']?.toString() ?? '',
-              'name': product['name'] ?? '',
-              'category': product['category']?.toString().toLowerCase() ?? '',
-              'price': product['price']?.toString() ?? '0',
-              'sell_price': product['sell_price']?.toString() ?? '0',
-              'stock': product['stock']?.toString() ?? '0',
-              'img_url': product['img_url'] ?? '',
-              'description': product['description'] ?? '',
-            };
-          }));
+          products = List<Map<String, dynamic>>.from(data['products']);
+          isLoading = false;
         });
+      } else {
+        throw Exception('Failed to load products');
       }
     } catch (e) {
       print('Error fetching products: $e');
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -67,8 +62,8 @@ class _HomePageState extends State<HomePage> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          categories = List<String>.from(
-              data['categories'].map((cat) => cat.toString().toLowerCase()));
+          categories = List<String>.from(data['categories']
+              .map((cat) => cat['name'].toString().toLowerCase()));
         });
       }
     } catch (e) {
@@ -76,170 +71,142 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> fetchData() async {
-    await Future.wait([fetchProducts(), fetchCategories()]);
-    setState(() {
-      isLoading = false;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> filteredProducts = products.where((product) {
-      return product['name']
-          .toString()
-          .toLowerCase()
-          .contains(searchQuery.toLowerCase());
-    }).toList();
-    double width = MediaQuery.of(context).size.width;
-    double height = MediaQuery.of(context).size.height;
-
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.grey.shade200, Colors.blueGrey.shade100],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
-          Column(
-            children: [
-              // Search bar in a non-scrolling area
-              Container(
-                color: Colors.grey.shade200,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search Snacks...',
-                        prefixIcon: Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      onChanged: (query) {
-                        setState(() {
-                          searchQuery = query;
-                        });
-                      },
-                    ),
+    return Scaffold(
+      backgroundColor: bgPrimary,
+      body: RefreshIndicator(
+        onRefresh: fetchProducts,
+        color: primaryColor,
+        child: CustomScrollView(
+          slivers: [
+            // New Stock Banner
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [darkBlue, darkBlue.withOpacity(0.4)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryColor.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-              ),
-              // Scrollable content
-              Expanded(
-                child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        height: height * 0.14,
-                        width: width * 0.9,
-                        decoration: BoxDecoration(),
-                        child: ClipRRect(
-                          child: ImageSlider(),
-                        ),
-                      ),
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(16.0),
-                        itemCount: categories.length,
-                        itemBuilder: (context, catIndex) {
-                          final category = categories[catIndex];
-                          List<Map<String, dynamic>> categoryProducts =
-                              filteredProducts.where((product) {
-                            return product['category'] == category;
-                          }).toList();
-                          if (categoryProducts.isEmpty)
-                            return SizedBox.shrink();
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8.0),
-                                child: Text(
-                                  category.toUpperCase(),
-                                  style: const TextStyle(
-                                    fontSize: 20,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'NEW STOCK',
+                                  style: TextStyle(
+                                    color: Colors.white,
                                     fontWeight: FontWeight.bold,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black26,
-                                        blurRadius: 4,
-                                        offset: Offset(0, 2),
-                                      ),
-                                    ],
+                                    fontSize: 12,
                                   ),
                                 ),
-                              ),
-                              SizedBox(
-                                height: 320,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  shrinkWrap: true,
-                                  physics: ClampingScrollPhysics(),
-                                  itemCount: categoryProducts.length,
-                                  itemBuilder: (context, index) {
-                                    final product = categoryProducts[index];
-                                    return Padding(
-                                      padding:
-                                          const EdgeInsets.only(right: 16.0),
-                                      child: AnimatedSnackCard(
-                                        product: product,
-                                      ),
-                                    );
-                                  },
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.star,
+                                  color: Colors.white,
+                                  size: 14,
                                 ),
-                              ),
-                            ],
-                          );
-                        },
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'EVERY DAY',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'STOCK UP ON YOUR BASIC\nFOOD STAPLES!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          height: 1.2,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ],
-          ),
-          if (isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.5),
-              child: Center(
-                child: SpinKitFadingCircle(
-                  itemBuilder: (BuildContext context, int index) {
-                    return DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: index.isEven ? Colors.white : Colors.green,
-                        shape: BoxShape.circle,
-                      ),
-                    );
-                  },
-                ),
-              ),
             ),
-        ],
+
+            // Products Grid
+            isLoading
+                ? const SliverFillRemaining(
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                      ),
+                    ),
+                  )
+                : products.isEmpty
+                    ? const SliverFillRemaining(
+                        child: Center(
+                          child: Text(
+                            'No products available',
+                            style: TextStyle(color: textSecondary),
+                          ),
+                        ),
+                      )
+                    : SliverPadding(
+                        padding: const EdgeInsets.all(16),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            childAspectRatio: 0.7,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final product = products[index];
+                              return ProductCard(
+                                product: product,
+                                onTap: () {
+                                  // Handle product tap
+                                },
+                              );
+                            },
+                            childCount: products.length,
+                          ),
+                        ),
+                      ),
+          ],
+        ),
       ),
     );
   }

@@ -15,6 +15,7 @@ class EditProduct extends StatefulWidget {
 
 class _EditProductState extends State<EditProduct> {
   final _formKey = GlobalKey<FormState>();
+  final _originalPriceKey = GlobalKey<FormFieldState>();
   final _scrollController = ScrollController();
   bool isLoading = false;
 
@@ -28,25 +29,29 @@ class _EditProductState extends State<EditProduct> {
 
   String? _image;
   String? _imageFile;
-  List<String> categories = [];
-  List<String> deliveryTimes = [
-    '1-2 days',
-    '2-3 days',
-    '3-4 days',
-    '4-5 days',
-    '5-7 days',
-    '7-10 days',
-    '10-15 days',
-    '15-20 days',
-    '20-30 days',
-    '30+ days'
+  String? _categoryId;
+
+  List<Map<String, dynamic>> categories = [];
+  List<Map<String, dynamic>> deliveryTimes = [
+    {'label': '30 minutes', 'minutes': 30},
+    {'label': '1 hour', 'minutes': 60},
+    {'label': '2 hours', 'minutes': 120},
+    {'label': '3 hours', 'minutes': 180},
+    {'label': '4 hours', 'minutes': 240},
+    {'label': '6 hours', 'minutes': 360},
+    {'label': '8 hours', 'minutes': 480},
+    {'label': '12 hours', 'minutes': 720},
+    {'label': '24 hours', 'minutes': 1440},
+    {'label': '36 hours', 'minutes': 2160},
+    {'label': '48 hours', 'minutes': 2880},
   ];
+  int? _deliveryTimeInMinutes;
 
   @override
   void initState() {
     super.initState();
-    _loadProduct();
-    fetchCategories();
+    // Important: First fetch categories, then load product details
+    fetchCategories().then((_) => _loadProduct());
   }
 
   @override
@@ -84,16 +89,15 @@ class _EditProductState extends State<EditProduct> {
 
   Future<void> fetchCategories() async {
     try {
-      final response = await http.post(
-        Uri.parse('${rOOT}get_categories'),
-        headers: {'Content-Type': 'application/json'},
-      );
+      final response = await http.get(Uri.parse('${rOOT}get_categories'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        setState(() {
-          categories = List<String>.from(data['categories']);
-        });
+        if (data['categories'] != null) {
+          setState(() {
+            categories = List<Map<String, dynamic>>.from(data['categories']);
+          });
+        }
       }
     } catch (e) {
       _showErrorSnackBar('Failed to load categories');
@@ -111,10 +115,39 @@ class _EditProductState extends State<EditProduct> {
           _nameController.text = data['name'] ?? '';
           _priceController.text = data['price']?.toString() ?? '';
           _discountPriceController.text = data['sell_price']?.toString() ?? '';
-          _categoryController.text = data['category'] ?? '';
+
+          // Set category information
+          final categoryName = data['category'] ?? '';
+          _categoryController.text = categoryName;
+
+          // Try to find category ID from category name
+          if (categories.isNotEmpty) {
+            final categoryMatch = categories.firstWhere(
+              (cat) => cat['name'] == categoryName,
+              orElse: () => {'id': null, 'name': categoryName},
+            );
+            _categoryId = categoryMatch['id']?.toString();
+          } else {
+            // If categories aren't loaded yet, store the ID directly
+            _categoryId = data['category_id']?.toString();
+          }
+
           _stockController.text = data['stock']?.toString() ?? '';
           _descriptionController.text = data['description'] ?? '';
-          _deliveryTimeController.text = data['delivery_time'] ?? '';
+
+          // Handle delivery time
+          if (data['delivery_time'] != null) {
+            _deliveryTimeInMinutes =
+                int.tryParse(data['delivery_time'].toString());
+            // Find matching delivery time label
+            final deliveryTime = deliveryTimes.firstWhere(
+              (time) => time['minutes'] == _deliveryTimeInMinutes,
+              orElse: () =>
+                  {'label': 'Custom', 'minutes': _deliveryTimeInMinutes},
+            );
+            _deliveryTimeController.text = deliveryTime['label'].toString();
+          }
+
           _image = data['img_url'];
         });
       } else {
@@ -164,9 +197,10 @@ class _EditProductState extends State<EditProduct> {
           "price": _priceController.text,
           "sell_price": _discountPriceController.text,
           "category": _categoryController.text,
+          "category_id": _categoryId,
           "stock": _stockController.text,
           "description": _descriptionController.text,
-          "delivery_time": _deliveryTimeController.text,
+          "delivery_time": _deliveryTimeInMinutes,
           "image": base64Image ?? _image,
         }),
       );
@@ -178,139 +212,60 @@ class _EditProductState extends State<EditProduct> {
         throw Exception('Failed to update product');
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to update product');
+      _showErrorSnackBar('Failed to update product: ${e.toString()}');
     } finally {
       setState(() => isLoading = false);
     }
   }
 
-  Widget _buildTextField(String label, TextEditingController controller,
-      {bool isNumber = false,
-      int maxLines = 1,
-      bool isCategory = false,
-      bool isDeliveryTime = false}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
+  Widget _buildInputField({
+    required String label,
+    required TextEditingController controller,
+    required String hint,
+    bool isNumber = false,
+    int maxLines = 1,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    GlobalKey<FormFieldState>? key,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
           ),
-          const SizedBox(height: 8),
-          if (isCategory)
-            DropdownButtonFormField<String>(
-              value: _categoryController.text.isEmpty
-                  ? null
-                  : _categoryController.text,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.grey[100],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Theme.of(context).primaryColor),
-                ),
-                contentPadding: const EdgeInsets.all(16),
-              ),
-              items: categories.map((String category) {
-                return DropdownMenuItem<String>(
-                  value: category,
-                  child: Text(category),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  setState(() {
-                    _categoryController.text = newValue;
-                  });
-                }
-              },
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please select a category';
-                }
-                return null;
-              },
-            )
-          else if (isDeliveryTime)
-            DropdownButtonFormField<String>(
-              value: _deliveryTimeController.text.isEmpty
-                  ? null
-                  : _deliveryTimeController.text,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.grey[100],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Theme.of(context).primaryColor),
-                ),
-                contentPadding: const EdgeInsets.all(16),
-              ),
-              items: deliveryTimes.map((String time) {
-                return DropdownMenuItem<String>(
-                  value: time,
-                  child: Text(time),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  setState(() {
-                    _deliveryTimeController.text = newValue;
-                  });
-                }
-              },
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please select delivery time';
-                }
-                return null;
-              },
-            )
-          else
-            TextFormField(
-              controller: controller,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.grey[100],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Theme.of(context).primaryColor),
-                ),
-                contentPadding: const EdgeInsets.all(16),
-              ),
-              keyboardType:
-                  isNumber ? TextInputType.number : TextInputType.text,
-              maxLines: maxLines,
-              validator: (value) {
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: hint,
+            filled: true,
+            fillColor: Colors.grey[100],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).primaryColor),
+            ),
+            contentPadding: const EdgeInsets.all(16),
+          ),
+          maxLines: maxLines,
+          keyboardType: keyboardType ??
+              (isNumber ? TextInputType.number : TextInputType.text),
+          key: key,
+          validator: validator ??
+              (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'This field is required';
                 }
@@ -319,9 +274,174 @@ class _EditProductState extends State<EditProduct> {
                 }
                 return null;
               },
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildCategoryField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Category',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
             ),
-        ],
-      ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Only show the dropdown if categories have been loaded
+        categories.isEmpty
+            ? TextFormField(
+                controller: _categoryController,
+                decoration: InputDecoration(
+                  hintText: 'Category name',
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                        BorderSide(color: Theme.of(context).primaryColor),
+                  ),
+                  contentPadding: const EdgeInsets.all(16),
+                  prefixIcon: const Icon(Icons.category),
+                  suffixIcon:
+                      const Icon(Icons.error_outline, color: Colors.orange),
+                ),
+                readOnly: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Category is required';
+                  }
+                  return null;
+                },
+              )
+            : DropdownButtonFormField<String>(
+                value: _categoryId,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                        BorderSide(color: Theme.of(context).primaryColor),
+                  ),
+                  contentPadding: const EdgeInsets.all(16),
+                ),
+                hint: const Text('Select category'),
+                items: categories.map((category) {
+                  return DropdownMenuItem<String>(
+                    value: category['id'].toString(),
+                    child: Text(category['name'].toString()),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    setState(() {
+                      _categoryId = newValue;
+                      final selectedCategory = categories.firstWhere(
+                        (cat) => cat['id'].toString() == newValue,
+                        orElse: () => {'name': ''},
+                      );
+                      _categoryController.text =
+                          selectedCategory['name'].toString();
+                    });
+                  }
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a category';
+                  }
+                  return null;
+                },
+              ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildDeliveryTimeField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Delivery Time',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<int>(
+          value: _deliveryTimeInMinutes,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey[100],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).primaryColor),
+            ),
+            contentPadding: const EdgeInsets.all(16),
+          ),
+          hint: const Text('Select delivery time'),
+          items: deliveryTimes.map((time) {
+            return DropdownMenuItem<int>(
+              value: time['minutes'] as int,
+              child: Text(time['label'] as String),
+            );
+          }).toList(),
+          onChanged: (int? newValue) {
+            setState(() {
+              _deliveryTimeInMinutes = newValue;
+              final deliveryTime = deliveryTimes.firstWhere(
+                (time) => time['minutes'] == newValue,
+                orElse: () => {'label': 'Custom', 'minutes': newValue},
+              );
+              _deliveryTimeController.text = deliveryTime['label'].toString();
+            });
+          },
+          validator: (value) {
+            if (value == null) {
+              return 'Please select delivery time';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 
@@ -330,7 +450,9 @@ class _EditProductState extends State<EditProduct> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Product'),
-        elevation: 0,
+        elevation: 1,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -340,6 +462,7 @@ class _EditProductState extends State<EditProduct> {
                 controller: _scrollController,
                 child: SingleChildScrollView(
                   controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.all(20),
                   child: Form(
                     key: _formKey,
@@ -347,10 +470,9 @@ class _EditProductState extends State<EditProduct> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Card(
-                          elevation: 0,
+                          elevation: 2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: Colors.grey.shade200),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
@@ -365,24 +487,60 @@ class _EditProductState extends State<EditProduct> {
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                _buildTextField(
-                                    'Product Name', _nameController),
-                                _buildTextField(
-                                    'Product Price', _priceController,
-                                    isNumber: true),
-                                _buildTextField(
-                                    'Discount Price', _discountPriceController,
-                                    isNumber: true),
+                                _buildInputField(
+                                  label: 'Product Name',
+                                  controller: _nameController,
+                                  hint: 'Enter product name',
+                                ),
+                                _buildInputField(
+                                  label: 'Original Price',
+                                  controller: _priceController,
+                                  hint: 'Enter original price',
+                                  isNumber: true,
+                                  key: _originalPriceKey,
+                                  keyboardType: TextInputType.number,
+                                  validator: (val) {
+                                    if (val == null || val.isEmpty) {
+                                      return 'Required field';
+                                    }
+                                    if (double.tryParse(val) == null) {
+                                      return 'Please enter a valid number';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                _buildInputField(
+                                  label: 'Discount Price',
+                                  controller: _discountPriceController,
+                                  hint: 'Enter discount price',
+                                  isNumber: true,
+                                  keyboardType: TextInputType.number,
+                                  validator: (val) {
+                                    if (val == null || val.isEmpty)
+                                      return 'Required field';
+                                    if (double.tryParse(val) == null)
+                                      return 'Please enter a valid number';
+
+                                    final originalPrice = _priceController.text;
+                                    if (originalPrice.isNotEmpty &&
+                                        double.tryParse(originalPrice) !=
+                                            null &&
+                                        double.parse(val) >=
+                                            double.parse(originalPrice)) {
+                                      return 'Discount price must be less than original price';
+                                    }
+                                    return null;
+                                  },
+                                ),
                               ],
                             ),
                           ),
                         ),
                         const SizedBox(height: 20),
                         Card(
-                          elevation: 0,
+                          elevation: 2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: Colors.grey.shade200),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
@@ -397,21 +555,17 @@ class _EditProductState extends State<EditProduct> {
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                _buildTextField('Category', _categoryController,
-                                    isCategory: true),
-                                _buildTextField(
-                                    'Delivery Time', _deliveryTimeController,
-                                    isDeliveryTime: true),
+                                _buildCategoryField(),
+                                _buildDeliveryTimeField(),
                               ],
                             ),
                           ),
                         ),
                         const SizedBox(height: 20),
                         Card(
-                          elevation: 0,
+                          elevation: 2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: Colors.grey.shade200),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
@@ -426,21 +580,27 @@ class _EditProductState extends State<EditProduct> {
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                _buildTextField('Stock', _stockController,
-                                    isNumber: true),
-                                _buildTextField(
-                                    'Description', _descriptionController,
-                                    maxLines: 3),
+                                _buildInputField(
+                                  label: 'Stock',
+                                  controller: _stockController,
+                                  hint: 'Enter stock quantity',
+                                  isNumber: true,
+                                ),
+                                _buildInputField(
+                                  label: 'Description',
+                                  controller: _descriptionController,
+                                  hint: 'Enter product description',
+                                  maxLines: 3,
+                                ),
                               ],
                             ),
                           ),
                         ),
                         const SizedBox(height: 20),
                         Card(
-                          elevation: 0,
+                          elevation: 2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: Colors.grey.shade200),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
@@ -465,7 +625,7 @@ class _EditProductState extends State<EditProduct> {
                                       fit: BoxFit.cover,
                                     ),
                                   )
-                                else if (_image != null)
+                                else if (_image != null && _image!.isNotEmpty)
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
                                     child: Image.network(
@@ -473,6 +633,39 @@ class _EditProductState extends State<EditProduct> {
                                       height: 200,
                                       width: double.infinity,
                                       fit: BoxFit.cover,
+                                      loadingBuilder:
+                                          (context, child, loadingProgress) {
+                                        if (loadingProgress == null)
+                                          return child;
+                                        return SizedBox(
+                                          height: 200,
+                                          child: Center(
+                                            child: CircularProgressIndicator(
+                                              value: loadingProgress
+                                                          .expectedTotalBytes !=
+                                                      null
+                                                  ? loadingProgress
+                                                          .cumulativeBytesLoaded /
+                                                      loadingProgress
+                                                          .expectedTotalBytes!
+                                                  : null,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Container(
+                                          height: 200,
+                                          width: double.infinity,
+                                          color: Colors.grey[200],
+                                          child: const Center(
+                                            child: Icon(
+                                                Icons.image_not_supported,
+                                                size: 50),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                 const SizedBox(height: 16),
