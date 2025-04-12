@@ -45,6 +45,7 @@ class _HomePageState extends State<HomePage> {
           products = List<Map<String, dynamic>>.from(data['products']);
           isLoading = false;
         });
+        print(products);
       } else {
         throw Exception('Failed to load products');
       }

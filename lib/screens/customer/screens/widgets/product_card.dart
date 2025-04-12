@@ -14,202 +14,168 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Safely convert values to strings
     final String productName = product['name']?.toString() ?? 'PRODUCT';
-    final String category = product['category']?.toString() ?? 'Organic';
-    final String weight = product['stock']?.toString() ?? '500g';
-    final String price = product['sell_price']?.toString() ?? '4.99';
-    final String originalPrice = product['original_price']?.toString() ??
-        '${double.parse(price) + 2.00}';
+    final String weight = product['stock']?.toString() ?? '48g';
+    final String price = product['sell_price']?.toString() ?? '20';
     final String imageUrl = product['img_url']?.toString() ?? '';
+    final String deliveryTime =
+        product['delivery_time']?.toString() ?? '5 Mins';
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: bgPrimary,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
         ),
-        clipBehavior: Clip.antiAlias,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product Image - Smaller
-            Container(
-              height: 100,
-              decoration: BoxDecoration(
-                color: bgSecondary,
-                image: DecorationImage(
-                  image: imageUrl.isNotEmpty
-                      ? NetworkImage(imageUrl)
-                      : const AssetImage('assets/placeholder.png')
-                          as ImageProvider,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: Stack(
-                children: [
-                  // NEW label if needed
-                  if (product['is_new'] == true ||
-                      product['id'] != null &&
-                          int.parse(product['id'].toString()) % 3 == 0)
+            // Image section
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                color: const Color(0xFFF2F2F2),
+                height: 140,
+                width: double.infinity,
+                child: Stack(
+                  children: [
+                    Center(
+                      child: imageUrl.isNotEmpty
+                          ? Image.network(
+                              imageUrl,
+                              fit: BoxFit
+                                  .cover, // Use BoxFit.cover for better fitting
+                              height: 140, // Match the container height
+                              width:
+                                  double.infinity, // Ensure it fills the width
+                            )
+                          : Image.asset(
+                              'assets/placeholder.png',
+                              fit: BoxFit
+                                  .cover, // Apply BoxFit.cover for the placeholder
+                              height: 140, // Match the container height
+                              width:
+                                  double.infinity, // Ensure it fills the width
+                            ),
+                    ),
                     Positioned(
-                      top: 8,
-                      left: 8,
+                      top: 10,
+                      left: 10,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: errorColor,
-                          borderRadius: BorderRadius.circular(4),
+                          color: const Color(0xFFE0E0E0),
+                          borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text(
-                          'NEW',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.timer,
+                                size: 14, color: Colors.black54),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$deliveryTime',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                ],
+                  ],
+                ),
               ),
             ),
 
-            // Product Info
+            const SizedBox(height: 8),
+
+            // Product info
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name and Category in Row
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          productName.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          category,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: primaryColor,
-                          ),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    productName,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-
+                  const SizedBox(height: 4),
+                  Text(
+                    '$weight',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-
-                  // Price Row
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Original price (strikethrough)
-                      Text(
-                        '₹$originalPrice',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          decoration: TextDecoration.lineThrough,
-                          color: Colors.redAccent,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Selling price
                       Text(
                         '₹$price',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                      const Spacer(),
-                      // Weight
-                      Text(
-                        '${weight} pieces',
                         style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // ADD Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // Add the product to the global cartItems list with quantity 1
-                        cartItems.add({
-                          'product': product,
-                          'quantity': 1,
-                        });
-                        cartCountNotifier.value = cartItems.length;
-                        // Show a SnackBar confirmation message
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '${product['name']} added to cart'.capitalize(),
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            backgroundColor: primaryColor,
-                            behavior: SnackBarBehavior.floating,
-                            elevation: 10,
-                            action: SnackBarAction(
-                              label: 'Close',
-                              textColor: Colors.white,
-                              onPressed: () {
-                                ScaffoldMessenger.of(context)
-                                    .hideCurrentSnackBar();
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'ADD',
-                        style: TextStyle(
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: Colors.black,
                         ),
                       ),
-                    ),
+                      OutlinedButton(
+                        onPressed: () {
+                          cartItems.add({
+                            'product': product,
+                            'quantity': 1,
+                          });
+                          cartCountNotifier.value = cartItems.length;
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${product['name']} added to cart'.capitalize(),
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                              backgroundColor: primaryColor,
+                              behavior: SnackBarBehavior.floating,
+                              elevation: 10,
+                              action: SnackBarAction(
+                                label: 'Close',
+                                textColor: Colors.white,
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context)
+                                      .hideCurrentSnackBar();
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          side: const BorderSide(
+                              color: Color(0xFFD92D20), width: 1.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 6),
+                        ),
+                        child: const Text(
+                          'Add',
+                          style: TextStyle(
+                            color: Color(0xFFD92D20),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    ],
                   ),
                 ],
               ),
