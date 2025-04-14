@@ -70,9 +70,7 @@ class _CartScreenState extends State<CartScreen> {
     });
   }
 
-  // Updated removeItem with undo support
   void removeItem(int index) {
-    // Keep track of the removed item and its controller
     final removedItem = widget.cartItems[index];
     final removedController = _controllers[index];
 
@@ -103,7 +101,6 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  // Shows a dialog with hint message when the info icon is tapped.
   void _showHintDialog() {
     showDialog(
       context: context,
@@ -134,11 +131,9 @@ class _CartScreenState extends State<CartScreen> {
           title: const Text('My Cart', style: TextStyle(color: Colors.white)),
           leading: Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Container(
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ),
           actions: [
@@ -286,126 +281,123 @@ class _CartScreenState extends State<CartScreen> {
                                 ),
                               ],
                             ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.all(8),
-                              title: Row(
-                                children: [
-                                  // Product Image
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      product['img_url'] ?? '',
-                                      width: 60,
-                                      height: 60,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        return Image.asset(
-                                          foodBg,
-                                          width: 60,
-                                          height: 60,
-                                          fit: BoxFit.cover,
-                                        );
-                                      },
-                                    ),
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    product['img_url'] ?? '',
+                                    width: 60,
+                                    height: 60,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        foodBg,
+                                        width: 60,
+                                        height: 60,
+                                        fit: BoxFit.cover,
+                                      );
+                                    },
                                   ),
-                                  const SizedBox(width: 8),
-                                  // Name, Price, and Quantity controls in one line
-                                  Expanded(
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        // Product Name and Price
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              product['name'] ?? '',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '₹${price.toStringAsFixed(2)}',
-                                              style: TextStyle(
-                                                color:
-                                                    Colors.deepPurple.shade400,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        product['name'] ?? '',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
                                         ),
-                                        // Quantity controls
-                                        Row(
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        product['description'] ?? '',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(
                                                   Icons.remove_circle_outline,
-                                                  color: Colors.deepPurple),
-                                              onPressed: () =>
-                                                  decreaseQuantity(index),
-                                            ),
-                                            SizedBox(
-                                              width: 40,
-                                              child: TextField(
-                                                keyboardType:
-                                                    TextInputType.number,
-                                                textAlign: TextAlign.center,
-                                                controller: _controllers[index],
-                                                onChanged: (value) {
-                                                  int? newQuantity =
-                                                      int.tryParse(value);
-                                                  if (newQuantity != null &&
-                                                      newQuantity > 0) {
-                                                    setState(() {
-                                                      widget.cartItems[index]
-                                                              ['quantity'] =
-                                                          newQuantity;
-                                                    });
-                                                  }
-                                                },
-                                                decoration:
-                                                    const InputDecoration(
-                                                  border: OutlineInputBorder(),
-                                                  contentPadding:
-                                                      EdgeInsets.symmetric(
-                                                          vertical: 4),
+                                                  color: Colors.deepPurple,
+                                                ),
+                                                onPressed: () =>
+                                                    decreaseQuantity(index),
+                                              ),
+                                              SizedBox(
+                                                width: 40,
+                                                child: TextField(
+                                                  keyboardType:
+                                                      TextInputType.number,
+                                                  textAlign: TextAlign.center,
+                                                  controller:
+                                                      _controllers[index],
+                                                  onChanged: (value) {
+                                                    int? newQuantity =
+                                                        int.tryParse(value);
+                                                    if (newQuantity != null &&
+                                                        newQuantity > 0) {
+                                                      setState(() {
+                                                        widget.cartItems[index]
+                                                                ['quantity'] =
+                                                            newQuantity;
+                                                      });
+                                                    }
+                                                  },
+                                                  decoration:
+                                                      const InputDecoration(
+                                                    border:
+                                                        OutlineInputBorder(),
+                                                    contentPadding:
+                                                        EdgeInsets.symmetric(
+                                                            vertical: 4),
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(
+                                              IconButton(
+                                                icon: const Icon(
                                                   Icons.add_circle_outline,
-                                                  color: Colors.deepPurple),
-                                              onPressed: () =>
-                                                  increaseQuantity(index),
+                                                  color: Colors.deepPurple,
+                                                ),
+                                                onPressed: () =>
+                                                    increaseQuantity(index),
+                                              ),
+                                            ],
+                                          ),
+                                          Text(
+                                            '₹${getItemTotal(index).toStringAsFixed(2)}',
+                                            style: TextStyle(
+                                              color:
+                                                  Colors.deepPurple.shade400,
+                                              fontWeight: FontWeight.bold,
                                             ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                                  // Total for the item
-                                  Text(
-                                    '₹${getItemTotal(index).toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      color: Colors.deepPurple.shade400,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         );
                       },
                     ),
                   ),
-                  // Bottom section for Total and full width Checkout button
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Container(
@@ -453,7 +445,8 @@ class _CartScreenState extends State<CartScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => OrderConfirmationPage(
+                                    builder: (context) =>
+                                        OrderConfirmationPage(
                                       orderItems: widget.cartItems,
                                       totalAmount: totalPrice,
                                     ),
