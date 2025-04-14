@@ -333,7 +333,7 @@ class _CartScreenState extends State<CartScreen> {
                                               IconButton(
                                                 icon: const Icon(
                                                   Icons.remove_circle_outline,
-                                                  color: Colors.deepPurple,
+                                                  color: Colors.black,
                                                 ),
                                                 onPressed: () =>
                                                     decreaseQuantity(index),
@@ -371,7 +371,7 @@ class _CartScreenState extends State<CartScreen> {
                                               IconButton(
                                                 icon: const Icon(
                                                   Icons.add_circle_outline,
-                                                  color: Colors.deepPurple,
+                                                  color: Colors.black,
                                                 ),
                                                 onPressed: () =>
                                                     increaseQuantity(index),
@@ -380,9 +380,8 @@ class _CartScreenState extends State<CartScreen> {
                                           ),
                                           Text(
                                             '₹${getItemTotal(index).toStringAsFixed(2)}',
-                                            style: TextStyle(
-                                              color:
-                                                  Colors.deepPurple.shade400,
+                                            style: const TextStyle(
+                                              color: Colors.black,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -445,8 +444,7 @@ class _CartScreenState extends State<CartScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) =>
-                                        OrderConfirmationPage(
+                                    builder: (context) => OrderConfirmationPage(
                                       orderItems: widget.cartItems,
                                       totalAmount: totalPrice,
                                     ),
