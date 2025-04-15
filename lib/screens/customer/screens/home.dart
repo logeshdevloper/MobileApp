@@ -15,9 +15,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> products = [];
-  List<String> categories = [];
   bool isLoading = true;
-  String searchQuery = '';
 
   @override
   void initState() {
@@ -57,21 +55,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> fetchCategories() async {
-    try {
-      final response = await http.get(Uri.parse('$rOOT/get_categories'));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          categories = List<String>.from(data['categories']
-              .map((cat) => cat['name'].toString().toLowerCase()));
-        });
-      }
-    } catch (e) {
-      print('Error fetching categories: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,13 +64,13 @@ class _HomePageState extends State<HomePage> {
         color: primaryColor,
         child: CustomScrollView(
           slivers: [
-            // New Stock Banner
+            // New Stock Banner (Updated to Primary Color)
             SliverToBoxAdapter(
               child: Container(
                 margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [darkBlue, darkBlue.withOpacity(0.4)],
+                    colors: [primaryColor, primaryColor.withOpacity(0.8)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../common/auth/logout.dart';
-import 'screens/category_page.dart';
 import 'screens/home.dart';
+import 'screens/category_page.dart';
 import 'screens/order/order_page.dart';
 import 'screens/profile_page.dart';
 import 'screens/widgets/add_cart.dart';
@@ -23,7 +23,7 @@ class _CustomerScreenState extends State<CustomerScreen> {
     setState(() {
       _selectedIndex = index;
     });
-    Navigator.pop(context); // Close drawer after selection
+    Navigator.pop(context);
   }
 
   void _addCartScreen() {
@@ -40,12 +40,12 @@ class _CustomerScreenState extends State<CustomerScreen> {
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: darkBlue,
-        iconTheme: IconThemeData(color: bgPrimary),
+        backgroundColor: primaryColor,
+        iconTheme: const IconThemeData(color: bgPrimary),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Pops Mart',
               style: TextStyle(
                 color: bgPrimary,
@@ -66,7 +66,7 @@ class _CustomerScreenState extends State<CustomerScreen> {
           IconButton(
             icon: Stack(
               children: [
-                Icon(Icons.shopping_cart, color: bgPrimary),
+                const Icon(Icons.shopping_cart, color: bgPrimary),
                 Positioned(
                   right: 0,
                   child: ValueListenableBuilder<int>(
@@ -75,7 +75,7 @@ class _CustomerScreenState extends State<CustomerScreen> {
                       return count > 0
                           ? Container(
                               padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 color: secondaryColor,
                                 shape: BoxShape.circle,
                               ),
@@ -85,7 +85,7 @@ class _CustomerScreenState extends State<CustomerScreen> {
                               ),
                               child: Text(
                                 '$count',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -101,11 +101,9 @@ class _CustomerScreenState extends State<CustomerScreen> {
             ),
             onPressed: _addCartScreen,
           ),
-          IconButton(
+          const IconButton(
             icon: Icon(Icons.notifications_outlined, color: bgPrimary),
-            onPressed: () {
-              // Handle notifications
-            },
+            onPressed: null, // You can add functionality here
           ),
           const SizedBox(width: 8),
         ],
@@ -113,7 +111,7 @@ class _CustomerScreenState extends State<CustomerScreen> {
       drawer: Drawer(
         child: Column(
           children: [
-            UserAccountsDrawerHeader(
+            const UserAccountsDrawerHeader(
               decoration: BoxDecoration(
                 color: primaryColor,
               ),
@@ -208,11 +206,11 @@ class _CustomerScreenState extends State<CustomerScreen> {
             ),
             const Divider(),
             ListTile(
-              leading: Icon(
+              leading: const Icon(
                 Icons.shopping_cart,
                 color: textSecondary,
               ),
-              title: Text(
+              title: const Text(
                 'Cart',
                 style: TextStyle(
                   color: textSecondary,
@@ -229,7 +227,7 @@ class _CustomerScreenState extends State<CustomerScreen> {
                   builder: (context, count, child) {
                     return Text(
                       '$count',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
@@ -240,11 +238,11 @@ class _CustomerScreenState extends State<CustomerScreen> {
               onTap: _addCartScreen,
             ),
             ListTile(
-              leading: Icon(
+              leading: const Icon(
                 Icons.logout,
                 color: textSecondary,
               ),
-              title: Text(
+              title: const Text(
                 'Logout',
                 style: TextStyle(
                   color: textSecondary,
@@ -270,7 +268,6 @@ class _CustomerScreenState extends State<CustomerScreen> {
                 ProfilePage(),
               ],
             ),
-            // Floating cart bar
             Positioned(
               left: 0,
               right: 0,
@@ -279,14 +276,13 @@ class _CustomerScreenState extends State<CustomerScreen> {
                 valueListenable: cartCountNotifier,
                 builder: (context, count, child) {
                   if (count == 0) return const SizedBox.shrink();
-
                   return GestureDetector(
                     onTap: _addCartScreen,
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: darkBlue,
+                        color: primaryColor,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -309,14 +305,15 @@ class _CustomerScreenState extends State<CustomerScreen> {
                           ),
                           const SizedBox(width: 4),
                           Container(
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(50),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(50)),
                             ),
                             padding: const EdgeInsets.all(3),
                             child: const Icon(
                               Icons.arrow_forward,
-                              color: darkBlue,
+                              color: primaryColor,
                               size: 16,
                             ),
                           ),
