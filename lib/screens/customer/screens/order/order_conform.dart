@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:pops/utilis/constant.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../home.dart';
@@ -40,23 +41,24 @@ class _OrderConfirmationPageState extends State<OrderConfirmationPage> {
       }
 
       final response = await http.post(
-        Uri.parse('YOUR_API_ENDPOINT_HERE/place-order'),
+        Uri.parse('${rOOT}place-order'),
         headers: {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
           'customer_id': customerId,
-          'items': widget.orderItems
-              .map((item) {
-                return {
-                  'product_id': item['product']['id'],
-                  'quantity': item['quantity'],
-                  'price': double.parse(item['product']['price'].toString()),
-                };
-              })
-              .toList(),
+          'items': widget.orderItems.map((item) {
+            return {
+              'product_id': item['product']['id'],
+              'quantity': item['quantity'],
+              'price': double.parse(item['product']['price'].toString()),
+            };
+          }).toList(),
           'total_amount': widget.totalAmount,
           'delivery_address': address,
+          'delivery_time': widget.orderItems.isNotEmpty
+              ? widget.orderItems[0]['product']['delivery_time']
+              : null, // Ensure it doesn't crash if empty
           'payment_method': 'COD',
           'status': 'pending',
         }),
@@ -68,7 +70,8 @@ class _OrderConfirmationPageState extends State<OrderConfirmationPage> {
 
         // Notify that the order was successful
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Order placed successfully! Order #$orderNumber')),
+          SnackBar(
+              content: Text('Order placed successfully! Order #$orderNumber')),
         );
 
         // Navigate to Home Page
@@ -129,9 +132,11 @@ class _OrderConfirmationPageState extends State<OrderConfirmationPage> {
                         controller: addressController,
                         maxLines: 3,
                         decoration: const InputDecoration(
-                          hintText: 'Enter street, city, state (separated by commas)',
+                          hintText:
+                              'Enter street, city, state (separated by commas)',
                           border: OutlineInputBorder(),
-                          helperText: 'Address must be at least 10 characters long',
+                          helperText:
+                              'Address must be at least 10 characters long',
                         ),
                       ),
                     ],
@@ -164,9 +169,11 @@ class _OrderConfirmationPageState extends State<OrderConfirmationPage> {
                         itemCount: widget.orderItems.length,
                         itemBuilder: (context, index) {
                           final item = widget.orderItems[index];
-                          final product = item['product'] as Map<String, dynamic>;
+                          final product =
+                              item['product'] as Map<String, dynamic>;
                           final quantity = item['quantity'] as int;
-                          final price = double.tryParse(product['price'].toString()) ?? 0;
+                          final price =
+                              double.tryParse(product['price'].toString()) ?? 0;
 
                           return ListTile(
                             title: Text(product['name'] ?? ''),
