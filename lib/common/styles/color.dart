@@ -12,7 +12,7 @@ const Color bgBlue = Color(0xFFF5F9FF);
 const Color bgcard = Color.fromARGB(255, 198, 181, 246);
 const Color bgcart = Color.fromARGB(255, 246, 243, 252);
 // Colors from your preferred palette
-const Color primaryColor = Color(0xFF43A047); // Fresh Green
+const Color primaryColor = Color(0xFF008080); // Fresh Green
 const Color secondaryColor = Color(0xFFFFA726); // Sunny Orange
 const Color bgPrimary = Color(0xFFFFFFFF); // White
 const Color bgSecondary = Color(0xFFF5F5F5); // Soft Gray

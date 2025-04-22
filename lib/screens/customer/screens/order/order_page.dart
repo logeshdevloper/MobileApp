@@ -41,10 +41,10 @@ class _OrdersPageState extends State<OrdersPage> {
         final data = jsonDecode(response.body);
         setState(() {
           activeOrders = List<Map<String, dynamic>>.from(
-            data['orders'].where((order) => order['status'] != 'completed'),
+            data['orders'].where((order) => order['status'] != 'delivered'),
           );
           pastOrders = List<Map<String, dynamic>>.from(
-            data['orders'].where((order) => order['status'] == 'completed'),
+            data['orders'].where((order) => order['status'] == 'delivered'),
           );
           isLoading = false;
         });

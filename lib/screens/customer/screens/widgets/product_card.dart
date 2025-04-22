@@ -136,26 +136,6 @@ class ProductCard extends StatelessWidget {
                             'quantity': 1,
                           });
                           cartCountNotifier.value = cartItems.length;
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${product['name']} added to cart'.capitalize(),
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                              backgroundColor: primaryColor,
-                              behavior: SnackBarBehavior.floating,
-                              elevation: 10,
-                              action: SnackBarAction(
-                                label: 'Close',
-                                textColor: Colors.white,
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context)
-                                      .hideCurrentSnackBar();
-                                },
-                              ),
-                            ),
-                          );
                         },
                         style: OutlinedButton.styleFrom(
                           backgroundColor: Colors.white,

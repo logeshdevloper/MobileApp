@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../common/auth/login_screen.dart';
 import 'widgets/task_list.dart';
 import 'widgets/task_details.dart';
-import 'admin_screens/product_section/product_manage_screen.dart';
-import 'admin_screens/product_manage/add_product.dart';
 import 'widgets/admin_drawer.dart';
 
 class AdmindashBoard extends StatefulWidget {

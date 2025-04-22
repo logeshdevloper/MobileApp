@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../models/task_model.dart';
-import '../../../services/task_service.dart';
+import '../../../../models/task_model.dart';
+import '../../../../services/task_service.dart';
 import 'task_assignment_screen.dart';
-import '../../../common/styles/color.dart';
+import '../../../../common/styles/color.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final String? taskId;

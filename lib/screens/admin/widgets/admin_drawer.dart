@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../admin_screens/worker_management_screen.dart';
+import '../admin_screens/sales_summary/sales_summry_screen.dart';
+import '../admin_screens/task-workers screen/worker_management_screen.dart';
 import '../admin_screens/product_section/product_manage_screen.dart';
 import '../admin_screens/product_manage/add_product.dart';
 import '../../../common/styles/color.dart';
@@ -161,7 +162,12 @@ class AdminDrawer extends StatelessWidget {
                   title: 'Sales Summary',
                   onTap: () {
                     Navigator.pop(context);
-                    // Navigate to Sales Summary
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SalesSummaryScreen(),
+                      ),
+                    );
                   },
                 ),
                 _buildDrawerItem(

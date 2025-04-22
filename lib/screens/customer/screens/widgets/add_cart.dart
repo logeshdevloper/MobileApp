@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../common/styles/color.dart';
 import '../order/order_conform.dart';
 import '../home.dart';
 
@@ -119,7 +120,7 @@ class _CartScreenState extends State<CartScreen> {
               child: const Text(
                 'Got it',
                 style: TextStyle(
-                  color: Color(0xFF43A047),
+                  color: primaryColor,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -173,7 +174,7 @@ class _CartScreenState extends State<CartScreen> {
       backgroundColor: const Color(0xFFF1F1F1),
       appBar: AppBar(
         title: const Text('My Cart'),
-        backgroundColor: const Color(0xFF43A047),
+        backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
@@ -220,8 +221,8 @@ class _CartScreenState extends State<CartScreen> {
                 ),
               ],
             ),
-            child: const Icon(Icons.shopping_cart,
-                size: 80, color: Color(0xFF43A047)),
+            child:
+                const Icon(Icons.shopping_cart, size: 80, color: primaryColor),
           ),
           const SizedBox(height: 20),
           const Text('Your cart is feeling lonely!',
@@ -239,7 +240,7 @@ class _CartScreenState extends State<CartScreen> {
             icon: const Icon(Icons.shopping_bag, color: Colors.white),
             label: const Text('Start Shopping'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF43A047),
+              backgroundColor: primaryColor,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
               shape: RoundedRectangleBorder(
@@ -363,7 +364,7 @@ class _CartScreenState extends State<CartScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
-        color: Color(0xFF43A047),
+        color: primaryColor,
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(
@@ -399,7 +400,7 @@ class _CartScreenState extends State<CartScreen> {
               ),
               child: const Text('Checkout',
                   style: TextStyle(
-                      color: Color(0xFF43A047),
+                      color: primaryColor,
                       fontSize: 16,
                       fontWeight: FontWeight.bold)),
             ),

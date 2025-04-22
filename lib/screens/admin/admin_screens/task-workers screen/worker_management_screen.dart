@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../models/worker_model.dart';
-import '../../../services/worker_service.dart';
-import '../../../common/styles/color.dart';
+import '../../../../models/worker_model.dart';
+import '../../../../services/worker_service.dart';
+import '../../../../common/styles/color.dart';
 
 class WorkerManagementScreen extends StatefulWidget {
   const WorkerManagementScreen({Key? key}) : super(key: key);

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../models/task_model.dart';
-import '../../../models/worker_model.dart';
-import '../../../services/task_service.dart';
-import '../../../services/worker_service.dart';
-import '../../../common/styles/color.dart';
+import '../../../../models/task_model.dart';
+import '../../../../models/worker_model.dart';
+import '../../../../services/task_service.dart';
+import '../../../../services/worker_service.dart';
+import '../../../../common/styles/color.dart';
 
 class TaskAssignmentScreen extends StatefulWidget {
   final String taskId;
