@@ -21,17 +21,26 @@ class _AddproductState extends State<Addproduct> {
   final _deliveryTimeController = TextEditingController();
   final _scrollController = ScrollController();
 
+  final List<bool> _isExpanded = [true, true, false, true];
+
   String? _name,
       _price,
       _discountPrice,
       _category,
       _description,
       _stock,
-      _image;
+      _image,
+      _brandName,
+      _isReturnable,
+      _deliveryCharge,
+      _tags,
+      _variantName,
+      _variantOptions;
   int? _deliveryTimeInMinutes;
   String? _categoryId;
   bool isLoading = false;
   bool isRefreshing = false;
+  bool _addVariants = false;
   List<Map<String, dynamic>> categories = [];
   List<Map<String, dynamic>> products = [];
 
@@ -74,6 +83,14 @@ class _AddproductState extends State<Addproduct> {
     super.initState();
     fetchCategories();
     fetchProducts();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _categoryController.dispose();
+    _deliveryTimeController.dispose();
+    super.dispose();
   }
 
   Future<void> fetchCategories() async {
@@ -195,6 +212,281 @@ class _AddproductState extends State<Addproduct> {
     }
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text(
+          'Add Product',
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.w500,
+            fontSize: 18,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        iconTheme: const IconThemeData(color: Colors.black87),
+      ),
+      body: Stack(
+        children: [
+          Form(
+            key: _formKey,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 80),
+              child: ListView(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _buildSection(
+                    index: 0,
+                    title: "Step 1: Basic Info",
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 16),
+                        _buildInputField(
+                          label: "Product Name",
+                          hint: "Enter product name",
+                          onSaved: (value) => _name = value,
+                        ),
+                        _buildInputField(
+                          label: "Description",
+                          hint: "Enter product description",
+                          onSaved: (value) => _description = value,
+                          maxLines: 5,
+                        ),
+                        _buildInputField(
+                          label: "Category",
+                          hint: "Select category",
+                          onSaved: (value) => _category = value,
+                        ),
+                        _buildInputField(
+                          label: "Brand Name",
+                          hint: "Enter brand name",
+                          onSaved: (value) => _brandName = value,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSection(
+                    index: 1,
+                    title: "Step 2: Price & Stock",
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: Checkbox(
+                                value: _addVariants,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _addVariants = value ?? false;
+                                  });
+                                },
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                side: BorderSide(
+                                  color: Colors.grey.shade400,
+                                  width: 1.5,
+                                ),
+                                activeColor: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              "Add Variants?",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        if (_addVariants) ...[
+                          _buildInputField(
+                            label: "Variant Name",
+                            hint: "Size, Color, etc.",
+                            onSaved: (value) => _variantName = value,
+                          ),
+                          _buildInputField(
+                            label: "Options",
+                            hint: "S,M,L or Red,Blue",
+                            onSaved: (value) => _variantOptions = value,
+                          ),
+                        ],
+                        _buildInputField(
+                          label: "Price per",
+                          hint: "Enter price",
+                          keyboardType: TextInputType.number,
+                          onSaved: (value) => _price = value,
+                        ),
+                        _buildInputField(
+                          label: "Original Price",
+                          hint: "Enter original price",
+                          keyboardType: TextInputType.number,
+                          onSaved: (value) => _price = value,
+                          key: _originalPriceKey,
+                        ),
+                        _buildInputField(
+                          label: "Discounted Price",
+                          hint: "Enter discounted price (optional)",
+                          keyboardType: TextInputType.number,
+                          onSaved: (value) => _discountPrice = value,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return null; // Optional field
+                            }
+                            return null;
+                          },
+                        ),
+                        _buildInputField(
+                          label: "Stock Quantity",
+                          hint: "Enter quantity",
+                          keyboardType: TextInputType.number,
+                          onSaved: (value) => _stock = value,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSection(
+                    index: 2,
+                    title: "Step 3: Product Details",
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16),
+                        _buildInputField(
+                          label: "Material",
+                          hint: "Enter material",
+                          onSaved: (value) {},
+                        ),
+                        _buildInputField(
+                          label: "Weight",
+                          hint: "Enter weight",
+                          keyboardType: TextInputType.number,
+                          onSaved: (value) {},
+                        ),
+                        _buildInputField(
+                          label: "Dimensions",
+                          hint: "Length x Width x Height",
+                          onSaved: (value) {},
+                        ),
+                        _buildInputField(
+                          label: "Country of Origin",
+                          hint: "Enter country",
+                          onSaved: (value) {},
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSection(
+                    index: 3,
+                    title: "Step 4: Images",
+                    child: _buildImageUploader(),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSection(
+                    index: 4,
+                    title: "Step 5: Delivery & Others",
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 16),
+                        _buildInputField(
+                          label: "Delivery Time Estimate",
+                          hint: "e.g., 2-3 days",
+                          onSaved: (value) {},
+                        ),
+                        _buildInputField(
+                          label: "Is Returnable?",
+                          hint: "Yes/No",
+                          onSaved: (value) => _isReturnable = value,
+                        ),
+                        _buildInputField(
+                          label: "Return Policy",
+                          hint: "Enter return policy details",
+                          maxLines: 2,
+                          onSaved: (value) {},
+                        ),
+                        _buildInputField(
+                          label: "Delivery Charge",
+                          hint: "Enter amount",
+                          keyboardType: TextInputType.number,
+                          onSaved: (value) => _deliveryCharge = value,
+                        ),
+                        _buildInputField(
+                          label: "Tags",
+                          hint: "Separate with commas",
+                          onSaved: (value) => _tags = value,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 80),
+                ],
+              ),
+            ),
+          ),
+          _buildBottomButtons(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection({
+    required int index,
+    required String title,
+    required Widget child,
+  }) {
+    if (_isExpanded.length <= index) {
+      final int additionalItems = index - _isExpanded.length + 1;
+      _isExpanded.addAll(List.generate(additionalItems, (_) => false));
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+        ),
+        child: ExpansionTile(
+          initiallyExpanded: _isExpanded[index],
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _isExpanded[index] = expanded;
+            });
+          },
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          title: Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Colors.black87,
+            ),
+          ),
+          expandedCrossAxisAlignment: CrossAxisAlignment.start,
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          children: [child],
+        ),
+      ),
+    );
+  }
+
   Widget _buildInputField({
     required String label,
     required String hint,
@@ -207,25 +499,35 @@ class _AddproductState extends State<Addproduct> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
+        if (label.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
         TextFormField(
           decoration: InputDecoration(
             hintText: hint,
-            filled: true,
-            fillColor: Colors.grey[100],
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
             ),
-            contentPadding: const EdgeInsets.all(16),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade500, width: 1.5),
+            ),
           ),
           maxLines: maxLines,
           keyboardType: keyboardType,
@@ -244,385 +546,197 @@ class _AddproductState extends State<Addproduct> {
     );
   }
 
-  Widget _buildCategoryField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Category',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-            TextButton.icon(
-              onPressed: _showAddCategoryDialog,
-              icon: const Icon(Icons.add),
-              label: const Text('Add Category'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          value: _categoryId,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.grey[100],
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.all(16),
-          ),
-          hint: const Text('Select category'),
-          items: categories.map((category) {
-            return DropdownMenuItem<String>(
-              value: category['id'].toString(),
-              child: Text(category['name'].toString()),
-            );
-          }).toList(),
-          onChanged: (String? newValue) {
-            setState(() {
-              _categoryId = newValue;
-              _category = categories
-                  .firstWhere((cat) => cat['id'].toString() == newValue)['name']
-                  .toString();
-            });
-          },
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please select a category';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 16),
-      ],
+  Widget _buildCategorySelector() {
+    return _buildInputField(
+      label: "Category",
+      hint: "Select category",
+      onSaved: (value) => _category = value,
     );
   }
 
-  Widget _buildDeliveryTimeField() {
+  Widget _buildImageUploader() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Delivery Time',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<int>(
-          value: _deliveryTimeInMinutes,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.grey[100],
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.all(16),
-          ),
-          hint: const Text('Select delivery time'),
-          items: deliveryTimes.map((time) {
-            return DropdownMenuItem<int>(
-              value: time['minutes'] as int,
-              child: Text(time['label'] as String),
-            );
-          }).toList(),
-          onChanged: (int? newValue) {
-            print(newValue);
-            setState(() {
-              _deliveryTimeInMinutes = newValue;
-            });
-          },
-          validator: (value) {
-            if (value == null) {
-              return 'Please select delivery time';
-            }
-            if (value < 30) {
-              return 'Minimum delivery time is 30 minutes';
-            }
-            if (value > 2880) {
-              return 'Maximum delivery time is 48 hours';
-            }
-            return null;
-          },
-        ),
         const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) {
-      _showErrorSnackBar('Please fill all required fields');
-      return;
-    }
-
-    setState(() => isLoading = true);
-
-    try {
-      _formKey.currentState!.save();
-
-      if (_image == null) {
-        _showErrorSnackBar('Please select an image');
-        setState(() => isLoading = false);
-        return;
-      }
-
-      if (_deliveryTimeInMinutes == null) {
-        _showErrorSnackBar('Please select delivery time');
-        setState(() => isLoading = false);
-        return;
-      }
-
-      final imageBytes = await File(_image!).readAsBytes();
-      final base64Image = base64Encode(imageBytes);
-
-      final response = await http.post(
-        Uri.parse('${rOOT}add-product'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'name': _name,
-          'price': _price,
-          'sell_price': _discountPrice,
-          'category': _category,
-          'category_id': _categoryId,
-          'stock': _stock,
-          'description': _description,
-          'image': base64Image,
-          'delivery_time': _deliveryTimeInMinutes
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        _showSuccessSnackBar('Product added successfully');
-        _formKey.currentState!.reset();
-        setState(() {
-          _image = null;
-          _name =
-              _price = _discountPrice = _category = _stock = _description = '';
-          _categoryId = null;
-          _deliveryTimeInMinutes = null;
-        });
-      } else {
-        throw Exception('Failed to add product');
-      }
-    } catch (e) {
-      _showErrorSnackBar('Failed to add product');
-    } finally {
-      setState(() => isLoading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Add Product"),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _onRefresh,
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _onRefresh,
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : GestureDetector(
-                onTap: () => FocusScope.of(context).unfocus(),
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildInputField(
-                              label: 'Product Name',
-                              hint: 'Enter product name',
-                              onSaved: (val) => _name = val,
-                            ),
-                            _buildInputField(
-                              key: _originalPriceKey,
-                              label: 'Original Price',
-                              hint: 'Enter original price',
-                              onSaved: (val) => _price = val,
-                              keyboardType: TextInputType.number,
-                              validator: (val) {
-                                if (val == null || val.isEmpty) {
-                                  return 'Required field';
-                                }
-                                if (double.tryParse(val) == null) {
-                                  return 'Please enter a valid number';
-                                }
-                                return null;
-                              },
-                            ),
-                            _buildInputField(
-                              label: 'Discount Price',
-                              hint: 'Enter discount price',
-                              onSaved: (val) => _discountPrice = val,
-                              keyboardType: TextInputType.number,
-                              validator: (val) {
-                                if (val == null || val.isEmpty)
-                                  return 'Required field';
-                                if (double.tryParse(val) == null)
-                                  return 'Please enter a valid number';
-
-                                final originalPrice = _originalPriceKey
-                                    .currentState?.value as String?;
-
-                                if (originalPrice != null &&
-                                    double.tryParse(originalPrice) != null &&
-                                    double.parse(val) >=
-                                        double.parse(originalPrice)) {
-                                  return 'Discount price must be less than original price';
-                                }
-                                return null;
-                              },
-                            ),
-                            _buildCategoryField(),
-                            _buildDeliveryTimeField(),
-                            _buildInputField(
-                              label: 'Stock',
-                              hint: 'Enter stock quantity',
-                              onSaved: (val) => _stock = val,
-                              keyboardType: TextInputType.number,
-                            ),
-                            _buildInputField(
-                              label: 'Description',
-                              hint: 'Enter product description',
-                              onSaved: (val) => _description = val,
-                              maxLines: 3,
-                            ),
-                            const SizedBox(height: 16),
-                            Center(
-                              child: Column(
-                                children: [
-                                  if (_image != null)
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Image.file(
-                                        File(_image!),
-                                        height: 200,
-                                        width: double.infinity,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  const SizedBox(height: 16),
-                                  ElevatedButton.icon(
-                                    onPressed: _uploadImage,
-                                    icon: const Icon(Icons.upload),
-                                    label: Text(_image == null
-                                        ? 'Upload Image'
-                                        : 'Change Image'),
-                                    style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 24, vertical: 12),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: _submitForm,
-                                style: ElevatedButton.styleFrom(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Add Product',
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+        GestureDetector(
+          onTap: _uploadImage,
+          child: Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade300, width: 1),
+            ),
+            child: _image != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(
+                      File(_image!),
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : const Center(
+                    child: Text(
+                      "Tap to upload image",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
                       ),
-                      if (products.isNotEmpty) ...[
-                        const SizedBox(height: 32),
-                        const Text(
-                          'Recent Products',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: products.length > 5 ? 5 : products.length,
-                          itemBuilder: (context, index) {
-                            final product = products[index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              child: ListTile(
-                                leading: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    product['image_url'] ?? '',
-                                    width: 50,
-                                    height: 50,
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            Container(
-                                      width: 50,
-                                      height: 50,
-                                      color: Colors.grey[200],
-                                      child: const Icon(Icons.image),
-                                    ),
-                                  ),
-                                ),
-                                title: Text(
-                                  product['name'] ?? 'No name',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  'Price: \$${product['price'] ?? '0.00'}\nStock: ${product['stock'] ?? '0'}',
-                                ),
-                                trailing: Text(
-                                  product['category'] ?? 'No category',
-                                  style: TextStyle(
-                                    color: Theme.of(context).primaryColor,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ],
+                    ),
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomButtons() {
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () {
+                  // Save as draft logic
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Colors.transparent,
+                  side: BorderSide(color: Colors.grey.shade300, width: 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  foregroundColor: Colors.black87,
+                ),
+                child: const Text(
+                  "Save as Draft",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 15,
                   ),
                 ),
               ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: isLoading ? null : addProduct,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Colors.transparent,
+                  side: BorderSide(color: Colors.grey.shade300, width: 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  foregroundColor: Colors.black87,
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.black54,
+                        ),
+                      )
+                    : const Text(
+                        "Save Product",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 15,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Colors.transparent,
+                  side: BorderSide(color: Colors.grey.shade300, width: 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  foregroundColor: Colors.red,
+                ),
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 15,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> addProduct() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    _formKey.currentState!.save();
+
+    if (_image == null) {
+      _showErrorSnackBar('Please select an image');
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final request =
+          http.MultipartRequest('POST', Uri.parse('${rOOT}add_product'));
+
+      // Add text fields
+      request.fields['name'] = _name!;
+      request.fields['price'] = _price!;
+      if (_discountPrice != null && _discountPrice!.isNotEmpty) {
+        request.fields['discountPrice'] = _discountPrice!;
+      }
+      request.fields['category'] = _category!;
+      request.fields['description'] = _description!;
+      request.fields['stock'] = _stock!;
+      request.fields['deliveryTimeInMinutes'] =
+          _deliveryTimeInMinutes.toString();
+
+      // Add image
+      final file = await http.MultipartFile.fromPath('image', _image!);
+      request.files.add(file);
+
+      final response = await request.send();
+      final responseData = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        _showSuccessSnackBar('Product added successfully');
+        Navigator.pop(context);
+      } else {
+        final errorData = jsonDecode(responseData);
+        throw Exception(errorData['message'] ?? 'Failed to add product');
+      }
+    } catch (e) {
+      _showErrorSnackBar(e.toString());
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 }
