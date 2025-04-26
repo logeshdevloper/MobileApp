@@ -45,7 +45,6 @@ class _AddproductState extends State<Addproduct> {
   String? _name,
       _price,
       _discountPrice,
-      _category,
       _description,
       _stock,
       _image,
@@ -57,6 +56,7 @@ class _AddproductState extends State<Addproduct> {
       _variantOptions;
   int? _deliveryTimeInMinutes;
   String? _categoryId;
+  String? _categoryName; // For display purposes only
   bool isLoading = false;
   bool isRefreshing = false;
   bool _addVariants = false;
@@ -116,8 +116,9 @@ class _AddproductState extends State<Addproduct> {
 
     // Set default category
     if (categories.isNotEmpty) {
-      _category = categories[0]['name'];
-      _categoryController.text = _category ?? '';
+      _categoryId = categories[0]['id'];
+      _categoryName = categories[0]['name'];
+      _categoryController.text = _categoryName ?? '';
     }
 
     fetchCategories();
@@ -237,10 +238,37 @@ class _AddproductState extends State<Addproduct> {
       );
 
       if (response.statusCode == 200) {
+        // Try to extract the category ID from the response
+        String? newCategoryId;
+        try {
+          final data = jsonDecode(response.body);
+          if (data['id'] != null) {
+            newCategoryId = data['id'].toString();
+          } else if (data['category'] != null &&
+              data['category']['id'] != null) {
+            newCategoryId = data['category']['id'].toString();
+          }
+        } catch (_) {
+          // If we can't extract ID from response, generate a temporary one
+          newCategoryId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+        }
+
+        // Add the new category to our local list
+        final newCategory = {
+          'id': newCategoryId,
+          'name': _categoryController.text,
+        };
+
+        setState(() {
+          categories.add(newCategory);
+          // Select the newly created category
+          _categoryName = newCategory['name'];
+          _categoryId = newCategory['id'];
+        });
+
         _showSuccessSnackBar('Category added successfully');
         _categoryController.clear();
         Navigator.pop(context);
-        fetchCategories();
       } else {
         throw Exception('Failed to add category');
       }
@@ -944,12 +972,17 @@ class _AddproductState extends State<Addproduct> {
             ),
             hint: Text("Select category",
                 style: TextStyle(color: Colors.grey.shade400, fontSize: 16)),
-            value: _category,
+            value: _categoryName,
             isExpanded: true,
             icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please select a category';
+              }
+              // Also validate that we have a valid category ID
+              if (value != "add_new" &&
+                  (_categoryId == null || _categoryId!.isEmpty)) {
+                return 'Invalid category selected';
               }
               return null;
             },
@@ -979,15 +1012,29 @@ class _AddproductState extends State<Addproduct> {
               setState(() {
                 if (value == "add_new") {
                   _showAddCategoryDialog();
-                  _category = null;
+                  _categoryName = null;
+                  _categoryId = null;
                 } else {
-                  _category = value;
+                  _categoryName = value;
+                  // Find and store the category ID
+                  final selectedCategory = categories.firstWhere(
+                    (cat) => cat['name'] == value,
+                    orElse: () => {'id': '', 'name': ''},
+                  );
+                  _categoryId = selectedCategory['id'];
                   _categoryController.text = value ?? '';
                 }
               });
             },
             onSaved: (value) {
-              _category = value;
+              _categoryName = value;
+              if (value != null && value != "add_new") {
+                final selectedCategory = categories.firstWhere(
+                  (cat) => cat['name'] == value,
+                  orElse: () => {'id': '', 'name': ''},
+                );
+                _categoryId = selectedCategory['id'];
+              }
               _categoryController.text = value ?? '';
             },
             dropdownColor: Colors.white,
@@ -1110,7 +1157,11 @@ class _AddproductState extends State<Addproduct> {
       final Map<String, dynamic> productData = {
         'name': _nameController.text,
         'price': _priceController.text,
-        'category': _categoryController.text,
+        // Try sending the category ID in different formats
+        'category':
+            _categoryId, // Try using 'category' instead of 'category_id'
+        //'category_id': _categoryId, // Original version
+        //'categoryId': _categoryId, // Try camelCase version
         'description': _descriptionController.text,
         'stock': _stockController.text,
       };
@@ -1192,6 +1243,8 @@ class _AddproductState extends State<Addproduct> {
           final errorData = jsonDecode(response.body);
           if (errorData['message'] != null) {
             errorMessage = errorData['message'];
+          } else if (errorData['error'] != null) {
+            errorMessage = errorData['error'];
           }
         } catch (e) {
           errorMessage = 'Error: ${response.body}';
@@ -1214,7 +1267,8 @@ class _AddproductState extends State<Addproduct> {
     switch (index) {
       case 0:
         return _nameController.text.isNotEmpty &&
-            _categoryController.text.isNotEmpty;
+            _categoryId != null &&
+            _categoryId!.isNotEmpty;
       case 1:
         return _priceController.text.isNotEmpty &&
             _stockController.text.isNotEmpty;
