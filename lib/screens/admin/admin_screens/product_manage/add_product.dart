@@ -60,14 +60,7 @@ class _AddproductState extends State<Addproduct> {
   bool isLoading = false;
   bool isRefreshing = false;
   bool _addVariants = false;
-  List<Map<String, dynamic>> categories = [
-    {'id': '1', 'name': 'Electronics'},
-    {'id': '2', 'name': 'Clothing'},
-    {'id': '3', 'name': 'Home & Kitchen'},
-    {'id': '4', 'name': 'Beauty & Personal Care'},
-    {'id': '5', 'name': 'Books'},
-    {'id': '6', 'name': 'Toys & Games'},
-  ];
+  List<Map<String, dynamic>> categories = [];
   List<Map<String, dynamic>> products = [];
 
   // Add a field to track if at least one product detail is filled
@@ -1021,7 +1014,9 @@ class _AddproductState extends State<Addproduct> {
                     (cat) => cat['name'] == value,
                     orElse: () => {'id': '', 'name': ''},
                   );
-                  _categoryId = selectedCategory['id'];
+
+                  print('Saved value: $selectedCategory');
+                  _categoryId = selectedCategory['id'].toString();
                   _categoryController.text = value ?? '';
                 }
               });
@@ -1157,11 +1152,7 @@ class _AddproductState extends State<Addproduct> {
       final Map<String, dynamic> productData = {
         'name': _nameController.text,
         'price': _priceController.text,
-        // Try sending the category ID in different formats
-        'category':
-            _categoryId, // Try using 'category' instead of 'category_id'
-        //'category_id': _categoryId, // Original version
-        //'categoryId': _categoryId, // Try camelCase version
+        'category_id': _categoryId,
         'description': _descriptionController.text,
         'stock': _stockController.text,
       };
