@@ -1014,8 +1014,6 @@ class _AddproductState extends State<Addproduct> {
                     (cat) => cat['name'] == value,
                     orElse: () => {'id': '', 'name': ''},
                   );
-
-                  print('Saved value: $selectedCategory');
                   _categoryId = selectedCategory['id'].toString();
                   _categoryController.text = value ?? '';
                 }
